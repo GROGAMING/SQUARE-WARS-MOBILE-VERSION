@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQUARE WARS SINGLEPLAYER</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .scores {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .score {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .player1 {
+            background-color: #ff4444;
+            color: white;
+        }
+        
+        .player2 {
+            background-color: #4444ff;
+            color: white;
+        }
+        
+        .current-player {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .grid-container {
+            border: 3px solid #333;
+            background-color: #fff;
+            position: relative;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(30, 20px);
+            grid-template-rows: repeat(20, 20px);
+            gap: 1px;
+            background-color: #ddd;
+            padding: 5px;
+        }
+        
+        .cell {
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        
+        .cell:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .cell.red {
+            background-color: #ff4444;
+        }
+        
+        .cell.blue {
+            background-color: #4444ff;
+        }
+        
+        .box-outline {
+            position: absolute;
+            border: 3px solid #333;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        .computer-turn {
+            color: #666;
+            font-style: italic;
+        }
+        
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>SQUARE WARS SINGLEPLAYER</h1>
+    
+    <div class="game-info">
+        <div class="scores">
+            <div class="score player1">You (Red): <span id="redGames">0</span></div>
+            <div class="score player2">Computer (Blue): <span id="blueGames">0</span></div>
+        </div>
+        <div class="current-player">Current Player: <span id="currentPlayer" class="player1">You (Red)</span></div>
+    </div>
+    
+    <div class="grid-container">
+        <div class="grid" id="gameGrid"></div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="startNewGame()">New Game</button>
+    </div>
+
+    <script>
+        const ROWS = 20;
+        const COLS = 30;
+        let grid = [];
+        let currentPlayer = 1; // 1 = red (human), 2 = blue (computer)
+        let blockedCells = new Set();
+        let redGames = 0;
+        let blueGames = 0;
+        let gameActive = true;
+
+        function initGame() {
+            // Create empty grid
+            grid = [];
+            for (let row = 0; row < ROWS; row++) {
+                grid[row] = [];
+                for (let col = 0; col < COLS; col++) {
+                    grid[row][col] = 0; // 0 = empty, 1 = red, 2 = blue
+                }
+            }
+            
+            currentPlayer = 1;
+            blockedCells = new Set();
+            gameActive = true;
+            createGrid();
+            updateDisplay();
+        }
+
+        function createGrid() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.onclick = () => {
+                        if (currentPlayer === 1 && gameActive) {
+                            dropPiece(col);
+                        }
+                    };
+                    gameGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function dropPiece(col) {
+            if (!gameActive) return;
+            
+            // Start from bottom (row 19) and work up to find available spot
+            for (let row = ROWS - 1; row >= 0; row--) {
+                // Check if this spot is available (empty and not blocked)
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    // Place the piece
+                    grid[row][col] = currentPlayer;
+                    updateCellDisplay(row, col);
+                    
+                    // Check for 4 in a row
+                    if (checkForWin(row, col)) {
+                        // Player got 4 in a row - they get a point and loser goes next
+                        if (currentPlayer === 1) {
+                            redGames++;
+                            currentPlayer = 2; // Computer goes next
+                        } else {
+                            blueGames++;
+                            currentPlayer = 1; // Human goes next
+                        }
+                    } else {
+                        // No win - just switch players normally
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    }
+                    
+                    updateDisplay();
+                    
+                    // If it's now computer's turn, make computer move after a short delay
+                    if (currentPlayer === 2 && gameActive) {
+                        setTimeout(makeComputerMove, 500);
+                    }
+                    
+                    return;
+                }
+            }
+        }
+
+        function makeComputerMove() {
+            if (!gameActive || currentPlayer !== 2) return;
+            
+            const bestCol = getBestMove();
+            if (bestCol !== -1) {
+                dropPiece(bestCol);
+            }
+        }
+
+        // Medium Difficulty AI - wins ~40% against average humans
+        function getBestMove() {
+            const depth = 3; // Keep depth moderate for performance
+            
+            // FIRST: Check for immediate threats that must be blocked
+            const blockingMove = findImmediateThreat();
+            if (blockingMove !== -1) {
+                return blockingMove; // Always block immediate threats
+            }
+            
+            const moves = [];
+            
+            // Evaluate all possible moves
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    
+                    // Make move
+                    grid[row][col] = 2;
+                    
+                    // Evaluate this move with some position bonus
+                    let score = minimax(grid, depth - 1, false, -Infinity, Infinity);
+                    
+                    // Add small positional preference (center columns slightly better)
+                    const centerBonus = Math.max(0, 5 - Math.abs(col - COLS/2)) * 2;
+                    score += centerBonus;
+                    
+                    // Undo move
+                    grid[row][col] = 0;
+                    
+                    moves.push({ col, score });
+                }
+            }
+            
+            if (moves.length === 0) return -1;
+            
+            // Sort moves by score (best first)
+            moves.sort((a, b) => b.score - a.score);
+            
+            // Adjusted probabilities for medium difficulty
+            const randomFactor = Math.random();
+            
+            if (randomFactor < 0.08) {
+                // 8% chance: Pick from bottom 25% of moves (suboptimal)
+                const bottomQuarter = moves.slice(Math.floor(moves.length * 0.75));
+                if (bottomQuarter.length > 0) {
+                    return bottomQuarter[Math.floor(Math.random() * bottomQuarter.length)].col;
+                }
+                // Fallback to decent moves if bottom quarter is empty
+                const decentMoves = moves.slice(1, Math.min(5, moves.length));
+                return decentMoves[Math.floor(Math.random() * Math.max(1, decentMoves.length))].col;
+            } else if (randomFactor < 0.45) {
+                // 37% chance: Pick from decent moves (2nd through 5th best)
+                const decentMoves = moves.slice(1, Math.min(5, moves.length));
+                if (decentMoves.length > 0) {
+                    return decentMoves[Math.floor(Math.random() * decentMoves.length)].col;
+                }
+                // Fallback to best move if no decent moves available
+                return moves[0].col;
+            } else {
+                // 55% chance: Pick the absolute best move
+                return moves[0].col;
+            }
+        }
+        
+        function findImmediateThreat() {
+            // Check if human (player 1) has 3 in a row with an open end that needs blocking
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    
+                    // Temporarily place a piece to test
+                    grid[row][col] = 1; // Simulate human move
+                    
+                    // Check if this would give human 4 in a row
+                    if (checkForWinSimulation(row, col, 1)) {
+                        grid[row][col] = 0; // Undo simulation
+                        return col; // This column must be blocked!
+                    }
+                    
+                    grid[row][col] = 0; // Undo simulation
+                }
+            }
+            return -1; // No immediate threat found
+        }
+
+        function minimax(board, depth, isMaximizing, alpha, beta) {
+            // Check terminal conditions
+            if (depth === 0 || isTerminalNode(board)) {
+                return evaluateBoard(board);
+            }
+            
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                
+                for (let col = 0; col < COLS; col++) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        
+                        // Make move
+                        board[row][col] = 2; // AI move
+                        
+                        // Recursive call
+                        const eval = minimax(board, depth - 1, false, alpha, beta);
+                        
+                        // Undo move
+                        board[row][col] = 0;
+                        
+                        maxEval = Math.max(maxEval, eval);
+                        alpha = Math.max(alpha, eval);
+                        
+                        // Alpha-beta pruning
+                        if (beta <= alpha) {
+                            break;
+                        }
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                
+                for (let col = 0; col < COLS; col++) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        
+                        // Make move
+                        board[row][col] = 1; // Human move
+                        
+                        // Recursive call
+                        const eval = minimax(board, depth - 1, true, alpha, beta);
+                        
+                        // Undo move
+                        board[row][col] = 0;
+                        
+                        minEval = Math.min(minEval, eval);
+                        beta = Math.min(beta, eval);
+                        
+                        // Alpha-beta pruning
+                        if (beta <= alpha) {
+                            break;
+                        }
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        function evaluateBoard(board) {
+            let score = 0;
+            
+            // Evaluate all positions but with limited scope for performance
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        score += evaluatePosition(board, row, col, board[row][col]);
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        function evaluatePosition(board, row, col, player) {
+            let totalScore = 0;
+            const directions = [
+                [0, 1],   // horizontal
+                [1, 0],   // vertical
+                [1, 1],   // diagonal \
+                [1, -1]   // diagonal /
+            ];
+            
+            // Check each direction for connected pieces
+            for (let [dRow, dCol] of directions) {
+                const lineScore = evaluateLine(board, row, col, dRow, dCol, player);
+                totalScore += lineScore;
+            }
+            
+            // Add position-based scoring (underweighted to create suboptimal play)
+            totalScore += getPositionalScore(row, col, player);
+            
+            return totalScore;
+        }
+
+        function evaluateLine(board, startRow, startCol, dRow, dCol, player) {
+            // Avoid double counting by only evaluating lines starting from this position
+            const prevRow = startRow - dRow;
+            const prevCol = startCol - dCol;
+            
+            if (prevRow >= 0 && prevRow < ROWS && prevCol >= 0 && prevCol < COLS &&
+                board[prevRow][prevCol] === player && !blockedCells.has(`${prevRow}-${prevCol}`)) {
+                return 0; // Already counted this line from previous position
+            }
+            
+            let consecutiveCount = 1;
+            let openEnds = 0;
+            
+            // Count consecutive pieces in forward direction
+            let r = startRow + dRow;
+            let c = startCol + dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   board[r][c] === player && !blockedCells.has(`${r}-${c}`) && consecutiveCount < 4) {
+                consecutiveCount++;
+                r += dRow;
+                c += dCol;
+            }
+            
+            // Check if line can be extended (open ends)
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            // Check backward end
+            r = startRow - dRow;
+            c = startCol - dCol;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            // Score based on line length and potential (deliberately undertuned)
+            let score = 0;
+            if (consecutiveCount >= 4) {
+                score = 1000; // Winning line
+            } else if (consecutiveCount === 3) {
+                // 3 in a row - moderate threat/opportunity
+                score = openEnds > 0 ? 60 : 30; // Reduced from typical values
+            } else if (consecutiveCount === 2) {
+                // 2 in a row - minor advantage
+                score = openEnds > 1 ? 15 : 8; // Reduced scoring
+            } else {
+                score = 2; // Single piece
+            }
+            
+            // Apply player multiplier (positive for AI, negative for human)
+            return player === 2 ? score : -score * 0.9; // Slightly underweight opponent threats
+        }
+
+        function getPositionalScore(row, col, player) {
+            let score = 0;
+            
+            // Slight preference for center columns (underweighted)
+            const centerDistance = Math.abs(col - COLS/2);
+            score += Math.max(0, 8 - centerDistance);
+            
+            // Slight preference for lower rows (gravity advantage)
+            score += (ROWS - row) * 0.5;
+            
+            // Small bonus for positions that could create multiple threats
+            score += getConnectivityBonus(row, col, player) * 0.3;
+            
+            // Apply player multiplier with intentional imbalance
+            return player === 2 ? score : -score * 0.8;
+        }
+
+        function getConnectivityBonus(row, col, player) {
+            // Count how many different directions this position could potentially connect
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            let connectivityScore = 0;
+            
+            for (let [dRow, dCol] of directions) {
+                let potentialLength = 1;
+                
+                // Check both directions for potential connections
+                for (let dir of [-1, 1]) {
+                    let r = row + (dRow * dir);
+                    let c = col + (dCol * dir);
+                    let steps = 0;
+                    
+                    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && steps < 3 &&
+                           !blockedCells.has(`${r}-${c}`) && 
+                           (grid[r][c] === 0 || grid[r][c] === player)) {
+                        if (grid[r][c] === player) potentialLength++;
+                        r += (dRow * dir);
+                        c += (dCol * dir);
+                        steps++;
+                    }
+                }
+                
+                if (potentialLength >= 3) {
+                    connectivityScore += potentialLength;
+                }
+            }
+            
+            return connectivityScore;
+        }
+
+        // Enhanced terminal node detection for better pruning
+        function isTerminalNode(board) {
+            // Quick win check - only check recently placed pieces for performance
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        if (checkForWinSimulation(row, col, board[row][col])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            // Check if board is full (simplified check)
+            let hasValidMove = false;
+            for (let col = 0; col < COLS && !hasValidMove; col++) {
+                if (canDropInColumn(col)) {
+                    hasValidMove = true;
+                }
+            }
+            
+            return !hasValidMove;
+        }
+
+        function canDropInColumn(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getDropRow(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    return row;
+                }
+            }
+            return -1;
+        }
+
+        function checkForWinSimulation(row, col, player) {
+            const directions = [
+                [0, 1],   // horizontal
+                [1, 0],   // vertical
+                [1, 1],   // diagonal \
+                [1, -1]   // diagonal /
+            ];
+
+            for (let [dRow, dCol] of directions) {
+                const line = getLine(row, col, dRow, dCol, player);
+                if (line.length >= 4) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateCellDisplay(row, col) {
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            if (grid[row][col] === 1) {
+                cell.className = 'cell red';
+            } else if (grid[row][col] === 2) {
+                cell.className = 'cell blue';
+            } else {
+                cell.className = 'cell';
+            }
+            
+            // Add black border outline for blocked cells
+            if (blockedCells.has(`${row}-${col}`)) {
+                cell.style.border = '2px solid #000';
+            } else {
+                cell.style.border = '1px solid #ccc';
+            }
+        }
+
+        function checkForWin(row, col) {
+            const player = grid[row][col];
+            const directions = [
+                [0, 1],   // horizontal
+                [1, 0],   // vertical
+                [1, 1],   // diagonal \
+                [1, -1]   // diagonal /
+            ];
+
+            for (let [dRow, dCol] of directions) {
+                const line = getLine(row, col, dRow, dCol, player);
+                if (line.length >= 4) {
+                    boxOffConnectedArea(line, player);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getLine(startRow, startCol, dRow, dCol, player) {
+            const line = [{row: startRow, col: startCol}];
+            
+            // Check in positive direction
+            let r = startRow + dRow;
+            let c = startCol + dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   grid[r][c] === player && !blockedCells.has(`${r}-${c}`)) {
+                line.push({row: r, col: c});
+                r += dRow;
+                c += dCol;
+            }
+            
+            // Check in negative direction
+            r = startRow - dRow;
+            c = startCol - dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   grid[r][c] === player && !blockedCells.has(`${r}-${c}`)) {
+                line.unshift({row: r, col: c});
+                r -= dRow;
+                c -= dCol;
+            }
+            
+            return line;
+        }
+
+        function boxOffConnectedArea(winningLine, player) {
+            // Find all squares touching the winning line, BUT ONLY if they're not already blocked
+            const connectedSquares = new Set();
+            const queue = [...winningLine];
+            
+            // Add winning line to connected squares (only if not already blocked)
+            winningLine.forEach(({row, col}) => {
+                if (!blockedCells.has(`${row}-${col}`)) {
+                    connectedSquares.add(`${row}-${col}`);
+                }
+            });
+            
+            // Find all squares touching these squares
+            while (queue.length > 0) {
+                const {row, col} = queue.shift();
+                
+                // Check all 8 adjacent cells
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        const key = `${newRow}-${newCol}`;
+                        
+                        if (newRow >= 0 && newRow < ROWS && 
+                            newCol >= 0 && newCol < COLS && 
+                            !connectedSquares.has(key) &&
+                            !blockedCells.has(key)) { // ONLY consider unblocked squares
+                            
+                            // If there's any piece here (red or blue), add it
+                            if (grid[newRow][newCol] !== 0) {
+                                connectedSquares.add(key);
+                                queue.push({row: newRow, col: newCol});
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Only proceed if we found new squares to box (not already blocked)
+            if (connectedSquares.size === 0) return;
+            
+            // Find bounding rectangle of all connected squares
+            const squares = Array.from(connectedSquares).map(key => {
+                const [r, c] = key.split('-').map(Number);
+                return {row: r, col: c};
+            });
+            
+            const minRow = Math.min(...squares.map(s => s.row));
+            const maxRow = Math.max(...squares.map(s => s.row));
+            const minCol = Math.min(...squares.map(s => s.col));
+            const maxCol = Math.max(...squares.map(s => s.col));
+            
+            // Block entire rectangular area (but only squares not already blocked)
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const key = `${r}-${c}`;
+                    if (!blockedCells.has(key)) { // Only block if not already blocked
+                        blockedCells.add(key);
+                        updateCellDisplay(r, c);
+                    }
+                }
+            }
+            
+            // Draw box outline
+            drawBoxOutline(minRow, maxRow, minCol, maxCol, player);
+        }
+
+        function drawBoxOutline(minRow, maxRow, minCol, maxCol, player) {
+            const box = document.createElement('div');
+            box.className = 'box-outline';
+            
+            const cellSize = 21; // 20px + 1px gap
+            const gridPadding = 5;
+            
+            box.style.left = (minCol * cellSize + gridPadding) + 'px';
+            box.style.top = (minRow * cellSize + gridPadding) + 'px';
+            box.style.width = ((maxCol - minCol + 1) * cellSize - 1) + 'px';
+            box.style.height = ((maxRow - minRow + 1) * cellSize - 1) + 'px';
+            
+            // Always use black border for won blocks
+            box.style.borderColor = '#000';
+            box.style.border = '3px solid #000';
+            
+            // Optional: Add very light transparent background to distinguish the block
+            box.style.backgroundColor = player === 1 ? 'rgba(255, 68, 68, 0.1)' : 'rgba(68, 68, 255, 0.1)';
+            
+            document.querySelector('.grid-container').appendChild(box);
+        }
+
+        function updateDisplay() {
+            document.getElementById('redGames').textContent = redGames;
+            document.getElementById('blueGames').textContent = blueGames;
+            
+            const currentPlayerSpan = document.getElementById('currentPlayer');
+            if (currentPlayer === 1) {
+                currentPlayerSpan.textContent = 'You (Red)';
+                currentPlayerSpan.className = 'player1';
+            } else {
+                currentPlayerSpan.textContent = 'Computer (Blue)';
+                currentPlayerSpan.className = 'player2 computer-turn';
+            }
+        }
+
+        function startNewGame() {
+            // Clear all box outlines
+            const boxes = document.querySelectorAll('.box-outline');
+            boxes.forEach(box => box.remove());
+            
+            // Reset scores
+            redGames = 0;
+            blueGames = 0;
+            
+            // Initialize fresh game
+            initGame();
+        }
+
+        // Start the game
+        initGame();
+    </script>
+</body>
+</html>
