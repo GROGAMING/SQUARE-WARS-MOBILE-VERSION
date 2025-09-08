@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQUARE WARS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        h1 {
+            color: white;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+        
+        .game-info {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .scores {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .score {
+            padding: 20px 30px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .score::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .score:hover::before {
+            left: 100%;
+        }
+        
+        .score.leading {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+        }
+        
+        .player1 {
+            color: #d63384;
+            border-left: 6px solid #ff4444;
+        }
+        
+        .player1.leading {
+            box-shadow: 0 12px 40px rgba(255, 68, 68, 0.4);
+        }
+        
+        .player2 {
+            color: #0d6efd;
+            border-left: 6px solid #4444ff;
+        }
+        
+        .player2.leading {
+            box-shadow: 0 12px 40px rgba(68, 68, 255, 0.4);
+        }
+        
+        .player-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .current-player-banner {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .current-player-banner.player1-turn {
+            border-color: #ff4444;
+            box-shadow: 0 0 30px rgba(255, 68, 68, 0.4);
+            animation: pulseRed 2s infinite;
+        }
+        
+        .current-player-banner.player2-turn {
+            border-color: #4444ff;
+            box-shadow: 0 0 30px rgba(68, 68, 255, 0.4);
+            animation: pulseBlue 2s infinite;
+        }
+        
+        @keyframes pulseRed {
+            0%, 100% { box-shadow: 0 0 30px rgba(255, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(255, 68, 68, 0.6); }
+        }
+        
+        @keyframes pulseBlue {
+            0%, 100% { box-shadow: 0 0 30px rgba(68, 68, 255, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(68, 68, 255, 0.6); }
+        }
+        
+        .grid-container {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 16px 64px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(30, 20px);
+            grid-template-rows: repeat(20, 20px);
+            gap: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .cell {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .cell:hover {
+            background: linear-gradient(145deg, #ffffff, #f1f3f4);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2;
+        }
+        
+        .cell:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .cell.red {
+            background: linear-gradient(145deg, #ff6b6b, #ff4444);
+            border-color: #ff2222;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 4px 12px rgba(255, 68, 68, 0.4);
+            animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .cell.blue {
+            background: linear-gradient(145deg, #6b6bff, #4444ff);
+            border-color: #2222ff;
+            box-shadow: 
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 4px 12px rgba(68, 68, 255, 0.4);
+            animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .cell.last-move {
+            border: 3px solid #ffd700 !important;
+            z-index: 3;
+            position: relative;
+            animation: lastMovePulse 2s infinite;
+        }
+        
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2) rotate(90deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes lastMovePulse {
+            0%, 100% {
+                border-color: #ffd700;
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            }
+            50% {
+                border-color: #ffed4e;
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            }
+        }
+        
+        .controls {
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            background: linear-gradient(145deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(40, 167, 69, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover {
+            background: linear-gradient(145deg, #34ce57, #17a2b8);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(40, 167, 69, 0.4);
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.3);
+        }
+        
+        .computer-turn {
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .modal {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            margin: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .modal p {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .modal button {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            margin: 8px;
+            min-width: 160px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+        
+        .modal button:hover {
+            background: linear-gradient(145deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modal button.single-player {
+            background: linear-gradient(145deg, #ff6b6b, #ff4444);
+            box-shadow: 0 8px 24px rgba(255, 107, 107, 0.3);
+        }
+        
+        .modal button.single-player:hover {
+            background: linear-gradient(145deg, #ff4444, #ff6b6b);
+            box-shadow: 0 12px 32px rgba(255, 107, 107, 0.4);
+        }
+
+        /* NEW: Difficulty button styles */
+        .modal button.beginner {
+            background: linear-gradient(145deg, #28a745, #20c997);
+            box-shadow: 0 8px 24px rgba(40, 167, 69, 0.3);
+        }
+        
+        .modal button.beginner:hover {
+            background: linear-gradient(145deg, #20c997, #17a2b8);
+            box-shadow: 0 12px 32px rgba(40, 167, 69, 0.4);
+        }
+
+        .modal button.medium {
+            background: linear-gradient(145deg, #ffc107, #fd7e14);
+            box-shadow: 0 8px 24px rgba(255, 193, 7, 0.3);
+        }
+        
+        .modal button.medium:hover {
+            background: linear-gradient(145deg, #fd7e14, #e0a800);
+            box-shadow: 0 12px 32px rgba(255, 193, 7, 0.4);
+        }
+
+        .modal button.advanced {
+            background: linear-gradient(145deg, #dc3545, #c82333);
+            box-shadow: 0 8px 24px rgba(220, 53, 69, 0.3);
+        }
+        
+        .modal button.advanced:hover {
+            background: linear-gradient(145deg, #c82333, #bd2130);
+            box-shadow: 0 12px 32px rgba(220, 53, 69, 0.4);
+        }
+        
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .scores {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            
+            .score {
+                padding: 15px 25px;
+                font-size: 16px;
+            }
+            
+            .modal-overlay {
+                padding: 10px;
+            }
+            
+            .modal {
+                padding: 30px 20px;
+                width: 95%;
+                max-height: 80vh;
+            }
+            
+            .modal h2 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            
+            .modal p {
+                font-size: 14px;
+                margin-bottom: 25px;
+            }
+            
+            .modal button {
+                padding: 16px 20px;
+                font-size: 16px;
+                width: 100%;
+                max-width: 250px;
+                margin: 8px 0;
+            }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .won-outline {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mode Select Modal -->
+    <div id="modeSelectModal" class="modal-overlay">
+        <div class="modal">
+            <h2>Choose Game Mode</h2>
+            <p>Select how you want to play SQUARE WARS:</p>
+            <button class="single-player" onclick="setGameMode('single')">🔴 Single Player<br><small>vs Computer</small></button>
+            <button onclick="setGameMode('multi')">🔵 Multiplayer<br><small>2 Players</small></button>
+        </div>
+    </div>
+
+    <!-- NEW: Difficulty Select Modal -->
+    <div id="difficultySelectModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Choose Difficulty</h2>
+            <p>Select the AI difficulty level:</p>
+            <button class="beginner" onclick="setDifficulty('beginner')">🟢 Beginner<br><small>Fast & Friendly</small></button>
+            <button class="medium" onclick="setDifficulty('medium')">🟡 Medium<br><small>Balanced Challenge</small></button>
+            <button class="advanced" onclick="setDifficulty('advanced')">🔴 Advanced<br><small>Tough Opponent</small></button>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div id="instructionsModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>How to Play SQUARE WARS</h2>
+            <p>Drop your discs into the grid and try to connect four in a row — horizontally, vertically, or diagonally. When a player connects four, that area of the board becomes blocked off with a black outline. The game continues until the board is full. Score points for each four-in-a-row you make. Can you outsmart your opponent and control the grid?</p>
+            <button onclick="closeInstructions()">Got it, let's play!</button>
+        </div>
+    </div>
+
+    <!-- End Game Modal -->
+    <div id="endGameModal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal">
+            <h2 id="endGameTitle">Game Over</h2>
+            <p id="endGameSubtitle">Winner: <strong>—</strong></p>
+            <button id="tryAgainBtn">🔄 Try Again</button>
+            <button id="changeModeBtn">🛠️ Change Mode</button>
+        </div>
+    </div>
+
+    <h1 id="gameTitle">Grid Connect Four</h1>
+    
+    <div class="game-info">
+        <div class="scores">
+            <div class="score player1" id="redScore">
+                <span class="player-icon">🔴</span><span id="redLabel">Player 1 (Red)</span>: <span id="redGames">0</span>
+            </div>
+            <div class="score player2" id="blueScore">
+                <span class="player-icon">🔵</span><span id="blueLabel">Player 2 (Blue)</span>: <span id="blueGames">0</span>
+            </div>
+        </div>
+        <div class="current-player-banner" id="currentPlayerBanner">
+            Current Player: <span id="currentPlayer" class="player1">Player 1 (Red)</span>
+        </div>
+    </div>
+    
+    <div class="grid-container">
+        <div class="grid" id="gameGrid"></div>
+        <div id="outlineLayer" style="position:absolute; inset:12px; pointer-events:none; z-index:20;"></div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="startNewGame()">🎮 New Game</button>
+    </div>
+
+    <script>
+        const ROWS = 20;
+        const COLS = 30;
+        let grid = [];
+        let currentPlayer = 1; // 1 = red (human), 2 = blue (computer/player2)
+        let blockedCells = new Set();
+        let redGames = 0;
+        let blueGames = 0;
+        let gameActive = true;
+        let lastMovePosition = null;
+        let gameMode = null; // 'single' or 'multi'
+        let aiDifficulty = null; // NEW: 'beginner', 'medium', 'advanced'
+
+        // Global function to set game mode
+        function setGameMode(mode) {
+            gameMode = mode;
+            const modeModal = document.getElementById('modeSelectModal');
+            
+            modeModal.classList.add('hidden');
+            
+            // NEW: If single player, show difficulty modal, otherwise show instructions
+            if (mode === 'single') {
+                const difficultyModal = document.getElementById('difficultySelectModal');
+                difficultyModal.classList.remove('hidden');
+                difficultyModal.setAttribute('aria-hidden', 'false');
+            } else {
+                updateLabelsForMode();
+                showInstructions();
+            }
+        }
+
+        // NEW: Global function to set difficulty
+        function setDifficulty(difficulty) {
+            aiDifficulty = difficulty;
+            const difficultyModal = document.getElementById('difficultySelectModal');
+            
+            difficultyModal.classList.add('hidden');
+            difficultyModal.setAttribute('aria-hidden', 'true');
+            
+            updateLabelsForMode();
+            showInstructions();
+        }
+
+        // NEW: Helper function to show instructions modal
+        function showInstructions() {
+            const instructionsModal = document.getElementById('instructionsModal');
+            instructionsModal.classList.remove('hidden');
+            instructionsModal.setAttribute('aria-hidden', 'false');
+        }
+
+        // Update labels based on game mode
+        function updateLabelsForMode() {
+            const gameTitle = document.getElementById('gameTitle');
+            const redLabel = document.getElementById('redLabel');
+            const blueLabel = document.getElementById('blueLabel');
+            
+            if (gameMode === 'single') {
+                gameTitle.textContent = 'SQUARE WARS SINGLEPLAYER';
+                redLabel.textContent = 'You (Red)';
+                // NEW: Show difficulty in label
+                if (aiDifficulty) {
+                    const difficultyName = aiDifficulty.charAt(0).toUpperCase() + aiDifficulty.slice(1);
+                    blueLabel.textContent = `Computer (Blue) - ${difficultyName}`;
+                } else {
+                    blueLabel.textContent = 'Computer (Blue)';
+                }
+            } else {
+                gameTitle.textContent = 'SQUARE WARS MULTIPLAYER';
+                redLabel.textContent = 'Player 1 (Red)';
+                blueLabel.textContent = 'Player 2 (Blue)';
+            }
+        }
+
+        // Global function to close instructions modal
+        function closeInstructions() {
+            const modal = document.getElementById('instructionsModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+                initGame();
+            }
+        }
+
+        function drawOutlineRect(minRow, maxRow, minCol, maxCol, player) {
+            const outlineLayer = document.getElementById('outlineLayer');
+            if (!outlineLayer) return;
+
+            const CELL = 20;
+            const GAP = 2;
+            const GRID_PADDING = 8;
+            const BORDER_WIDTH = 1;
+            
+            const x = GRID_PADDING + minCol * (CELL + GAP) - BORDER_WIDTH - 1 - 2;
+            const y = GRID_PADDING + minRow * (CELL + GAP) - BORDER_WIDTH - 1 - 2;
+            const w = (maxCol - minCol + 1) * (CELL + GAP) - GAP + (2 * BORDER_WIDTH) + 2;
+            const h = (maxRow - minRow + 1) * (CELL + GAP) - GAP + (2 * BORDER_WIDTH) + 2;
+
+            const box = document.createElement('div');
+            box.style.position = 'absolute';
+            box.style.left = `${x}px`;
+            box.style.top = `${y}px`;
+            box.style.width = `${w}px`;
+            box.style.height = `${h}px`;
+            box.style.border = '3px solid rgba(0, 0, 0, 0.8)';
+            box.style.borderRadius = '6px';
+            box.style.boxSizing = 'border-box';
+            box.style.pointerEvents = 'none';
+            box.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.3)';
+            
+            if (player === 1) {
+                box.style.backgroundColor = 'rgba(255, 68, 68, 0.3)';
+                box.style.borderColor = 'rgba(255, 68, 68, 0.8)';
+            } else if (player === 2) {
+                box.style.backgroundColor = 'rgba(68, 68, 255, 0.3)';
+                box.style.borderColor = 'rgba(68, 68, 255, 0.8)';
+            }
+            
+            box.className = 'won-outline';
+            outlineLayer.appendChild(box);
+        }
+
+        function initGame() {
+            grid = [];
+            for (let row = 0; row < ROWS; row++) {
+                grid[row] = [];
+                for (let col = 0; col < COLS; col++) {
+                    grid[row][col] = 0;
+                }
+            }
+            
+            currentPlayer = 1;
+            blockedCells = new Set();
+            gameActive = true;
+            lastMovePosition = null;
+            
+            const outlineLayer = document.getElementById('outlineLayer');
+            if (outlineLayer) outlineLayer.innerHTML = '';
+            
+            createGrid();
+            updateDisplay();
+        }
+
+        function createGrid() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.onclick = () => {
+                        if (gameActive) {
+                            if (gameMode === 'single' && currentPlayer === 1) {
+                                dropPiece(col);
+                            } else if (gameMode === 'multi') {
+                                dropPiece(col);
+                            }
+                        }
+                    };
+                    gameGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function dropPiece(col) {
+            if (!gameActive) return;
+            
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    grid[row][col] = currentPlayer;
+                    lastMovePosition = { row, col };
+                    updateCellDisplay(row, col);
+                    
+                    if (checkForWin(row, col)) {
+                        if (currentPlayer === 1) {
+                            redGames++;
+                            currentPlayer = 2;
+                        } else {
+                            blueGames++;
+                            currentPlayer = 1;
+                        }
+                    } else {
+                        currentPlayer = currentPlayer === 1 ? 2 : 1;
+                    }
+                    
+                    updateDisplay();
+                    
+                    checkEndOfGame();
+                    
+                    if (gameMode === 'single' && currentPlayer === 2 && gameActive) {
+                        setTimeout(makeComputerMove, 500);
+                    }
+                    
+                    return;
+                }
+            }
+        }
+
+        function makeComputerMove() {
+            if (!gameActive || currentPlayer !== 2 || gameMode !== 'single') return;
+            
+            const bestCol = getBestMove();
+            if (bestCol !== -1) {
+                dropPiece(bestCol);
+            }
+        }
+
+        // NEW: Check if a cell is playable (considering gravity)
+        function isPlayableCell(r, c) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
+            if (blockedCells.has(`${r}-${c}`)) return false;
+            if (grid[r][c] !== 0) return false;
+            return getDropRow(c) === r;
+        }
+
+        // NEW: Scan for human two-in-a-row threats
+        function findOpenTwoThreatBlock() {
+            const player = 1;
+            const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            const candidates = [];
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (grid[r][c] !== player) continue;
+
+                    for (const [dr, dc] of dirs) {
+                        const r2 = r + dr, c2 = c + dc;
+                        if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) continue;
+                        if (grid[r2][c2] !== player) continue;
+
+                        const leftR = r - dr, leftC = c - dc;
+                        const rightR = r2 + dr, rightC = c2 + dc;
+
+                        if (isPlayableCell(leftR, leftC)) {
+                            candidates.push(leftC);
+                        }
+                        if (isPlayableCell(rightR, rightC)) {
+                            candidates.push(rightC);
+                        }
+                    }
+                }
+            }
+
+            if (candidates.length === 0) return -1;
+
+            const center = COLS / 2;
+            candidates.sort((a, b) => Math.abs(a - center) - Math.abs(b - center));
+            return candidates[0];
+        }
+
+        // NEW: Master AI function that routes to difficulty-specific implementations
+        function getBestMove() {
+            if (!aiDifficulty) return getBestMoveMedium();
+            
+            switch (aiDifficulty) {
+                case 'beginner':
+                    return getBestMoveBeginner();
+                case 'medium':
+                    return getBestMoveMedium();
+                case 'advanced':
+                    return getBestMoveAdvanced();
+                default:
+                    return getBestMoveMedium();
+            }
+        }
+
+        // NEW: Beginner AI - plays fast and weak with random moves
+        function getBestMoveBeginner() {
+            // Always take immediate win
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    grid[row][col] = 2;
+                    if (checkForWinSimulation(row, col, 2)) {
+                        grid[row][col] = 0;
+                        return col;
+                    }
+                    grid[row][col] = 0;
+                }
+            }
+
+            // Sometimes block immediate threats (60% chance)
+            if (Math.random() < 0.6) {
+                const blockingMove = findImmediateThreat();
+                if (blockingMove !== -1) {
+                    return blockingMove;
+                }
+            }
+
+            // Otherwise play mostly random with slight center preference
+            const availableCols = [];
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const centerDistance = Math.abs(col - COLS/2);
+                    const weight = Math.max(1, 4 - Math.floor(centerDistance / 3));
+                    for (let i = 0; i < weight; i++) {
+                        availableCols.push(col);
+                    }
+                }
+            }
+
+            if (availableCols.length === 0) return -1;
+            return availableCols[Math.floor(Math.random() * availableCols.length)];
+        }
+
+        // Medium Difficulty AI - wins ~40% against average humans (existing implementation)
+        function getBestMoveMedium() {
+            const depth = 3;
+            
+            const openTwoBlock = findOpenTwoThreatBlock();
+            if (openTwoBlock !== -1) {
+                if (Math.random() < 0.90) {
+                    return openTwoBlock;
+                }
+            }
+            
+            const blockingMove = findImmediateThreat();
+            if (blockingMove !== -1) {
+                return blockingMove;
+            }
+            
+            const moves = [];
+            
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    
+                    grid[row][col] = 2;
+                    let score = minimax(grid, depth - 1, false, -Infinity, Infinity);
+                    
+                    const centerBonus = Math.max(0, 5 - Math.abs(col - COLS/2)) * 2;
+                    score += centerBonus;
+                    
+                    grid[row][col] = 0;
+                    moves.push({ col, score });
+                }
+            }
+            
+            if (moves.length === 0) return -1;
+            
+            moves.sort((a, b) => b.score - a.score);
+            
+            const randomFactor = Math.random();
+            
+            if (randomFactor < 0.05) {
+                const bottomQuarter = moves.slice(Math.floor(moves.length * 0.75));
+                if (bottomQuarter.length > 0) {
+                    return bottomQuarter[Math.floor(Math.random() * bottomQuarter.length)].col;
+                }
+                const decentMoves = moves.slice(1, Math.min(5, moves.length));
+                return decentMoves[Math.floor(Math.random() * Math.max(1, decentMoves.length))].col;
+            } else if (randomFactor < 0.45) {
+                const decentMoves = moves.slice(1, Math.min(5, moves.length));
+                if (decentMoves.length > 0) {
+                    return decentMoves[Math.floor(Math.random() * decentMoves.length)].col;
+                }
+                return moves[0].col;
+            } else {
+                return moves[0].col;
+            }
+        }
+
+        // NEW: Advanced AI - strong but beatable, slightly toned down from perfect
+        function getBestMoveAdvanced() {
+            const depth = 4;
+            
+            // Always take immediate wins
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    grid[row][col] = 2;
+                    if (checkForWinSimulation(row, col, 2)) {
+                        grid[row][col] = 0;
+                        return col;
+                    }
+                    grid[row][col] = 0;
+                }
+            }
+            
+            // Always block immediate threats
+            const blockingMove = findImmediateThreat();
+            if (blockingMove !== -1) {
+                return blockingMove;
+            }
+            
+            // Block open-two threats 95% of the time (slight miss chance)
+            const openTwoBlock = findOpenTwoThreatBlock();
+            if (openTwoBlock !== -1) {
+                if (Math.random() < 0.95) {
+                    return openTwoBlock;
+                }
+            }
+            
+            const candidateMoves = getCandidateMovesOrdered();
+            const moves = [];
+            
+            for (let col of candidateMoves) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    
+                    grid[row][col] = 2;
+                    let score = minimaxAdvanced(grid, depth - 1, false, -Infinity, Infinity);
+                    
+                    const centerBonus = Math.max(0, 8 - Math.abs(col - COLS/2)) * 3;
+                    score += centerBonus;
+                    
+                    grid[row][col] = 0;
+                    moves.push({ col, score });
+                }
+            }
+            
+            if (moves.length === 0) return -1;
+            
+            moves.sort((a, b) => b.score - a.score);
+            
+            // 85% best move, 12% second-best, 3% third-best (no truly random moves)
+            const randomFactor = Math.random();
+            if (randomFactor < 0.85) {
+                return moves[0].col; // Best move
+            } else if (randomFactor < 0.97) {
+                // Second best move
+                return moves.length > 1 ? moves[1].col : moves[0].col;
+            } else {
+                // Third best move
+                return moves.length > 2 ? moves[2].col : moves[0].col;
+            }
+        }
+
+        // NEW: Get ordered candidate moves for performance optimization
+        function getCandidateMovesOrdered() {
+            const candidates = [];
+            const center = Math.floor(COLS / 2);
+            
+            for (let offset = 0; offset <= center; offset++) {
+                if (offset === 0) {
+                    if (canDropInColumn(center)) candidates.push(center);
+                } else {
+                    if (center - offset >= 0 && canDropInColumn(center - offset)) {
+                        candidates.push(center - offset);
+                    }
+                    if (center + offset < COLS && canDropInColumn(center + offset)) {
+                        candidates.push(center + offset);
+                    }
+                }
+                
+                if (candidates.length >= 12) break;
+            }
+            
+            return candidates;
+        }
+
+        // NEW: Advanced minimax with better evaluation
+        function minimaxAdvanced(board, depth, isMaximizing, alpha, beta) {
+            if (depth === 0 || isTerminalNodeAdvanced(board)) {
+                return evaluateBoardAdvanced(board);
+            }
+            
+            const candidateMoves = getCandidateMovesOrdered();
+            
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                
+                for (let col of candidateMoves) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        board[row][col] = 2;
+                        const eval = minimaxAdvanced(board, depth - 1, false, alpha, beta);
+                        board[row][col] = 0;
+                        
+                        maxEval = Math.max(maxEval, eval);
+                        alpha = Math.max(alpha, eval);
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                
+                for (let col of candidateMoves) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        board[row][col] = 1;
+                        const eval = minimaxAdvanced(board, depth - 1, true, alpha, beta);
+                        board[row][col] = 0;
+                        
+                        minEval = Math.min(minEval, eval);
+                        beta = Math.min(beta, eval);
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        // NEW: Enhanced board evaluation for advanced AI
+        function evaluateBoardAdvanced(board) {
+            let score = 0;
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        score += evaluatePositionAdvanced(board, row, col, board[row][col]);
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        // NEW: Enhanced position evaluation
+        function evaluatePositionAdvanced(board, row, col, player) {
+            let totalScore = 0;
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            
+            for (let [dRow, dCol] of directions) {
+                const lineScore = evaluateLineAdvanced(board, row, col, dRow, dCol, player);
+                totalScore += lineScore;
+            }
+            
+            totalScore += getPositionalScoreAdvanced(row, col, player);
+            return totalScore;
+        }
+
+        // NEW: Enhanced line evaluation
+        function evaluateLineAdvanced(board, startRow, startCol, dRow, dCol, player) {
+            const prevRow = startRow - dRow;
+            const prevCol = startCol - dCol;
+            
+            if (prevRow >= 0 && prevRow < ROWS && prevCol >= 0 && prevCol < COLS &&
+                board[prevRow][prevCol] === player && !blockedCells.has(`${prevRow}-${prevCol}`)) {
+                return 0;
+            }
+            
+            let consecutiveCount = 1;
+            let openEnds = 0;
+            
+            let r = startRow + dRow;
+            let c = startCol + dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   board[r][c] === player && !blockedCells.has(`${r}-${c}`) && consecutiveCount < 4) {
+                consecutiveCount++;
+                r += dRow;
+                c += dCol;
+            }
+            
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            r = startRow - dRow;
+            c = startCol - dCol;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            let score = 0;
+            if (consecutiveCount >= 4) {
+                score = 10000;
+            } else if (consecutiveCount === 3) {
+                score = openEnds > 0 ? 500 : 100;
+            } else if (consecutiveCount === 2) {
+                score = openEnds > 1 ? 50 : 20;
+            } else {
+                score = 5;
+            }
+            
+            return player === 2 ? score : -score;
+        }
+
+        // NEW: Enhanced positional scoring
+        function getPositionalScoreAdvanced(row, col, player) {
+            let score = 0;
+            
+            const centerDistance = Math.abs(col - COLS/2);
+            score += Math.max(0, 15 - centerDistance * 2);
+            
+            score += (ROWS - row) * 2;
+            score += getConnectivityBonusAdvanced(row, col, player);
+            
+            return player === 2 ? score : -score * 0.9;
+        }
+
+        // NEW: Enhanced connectivity bonus
+        function getConnectivityBonusAdvanced(row, col, player) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            let connectivityScore = 0;
+            
+            for (let [dRow, dCol] of directions) {
+                let potentialLength = 1;
+                
+                for (let dir of [-1, 1]) {
+                    let r = row + (dRow * dir);
+                    let c = col + (dCol * dir);
+                    let steps = 0;
+                    
+                    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && steps < 3 &&
+                           !blockedCells.has(`${r}-${c}`) && 
+                           (grid[r][c] === 0 || grid[r][c] === player)) {
+                        if (grid[r][c] === player) potentialLength++;
+                        r += (dRow * dir);
+                        c += (dCol * dir);
+                        steps++;
+                    }
+                }
+                
+                if (potentialLength >= 3) {
+                    connectivityScore += potentialLength * 2;
+                }
+            }
+            
+            return connectivityScore;
+        }
+
+        // NEW: Enhanced terminal node detection for advanced AI
+        function isTerminalNodeAdvanced(board) {
+            for (let row = Math.max(0, ROWS - 10); row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        if (checkForWinSimulation(row, col, board[row][col])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function findImmediateThreat() {
+            for (let col = 0; col < COLS; col++) {
+                if (canDropInColumn(col)) {
+                    const row = getDropRow(col);
+                    grid[row][col] = 1;
+                    
+                    if (checkForWinSimulation(row, col, 1)) {
+                        grid[row][col] = 0;
+                        return col;
+                    }
+                    
+                    grid[row][col] = 0;
+                }
+            }
+            return -1;
+        }
+
+        function minimax(board, depth, isMaximizing, alpha, beta) {
+            if (depth === 0 || isTerminalNode(board)) {
+                return evaluateBoard(board);
+            }
+            
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                
+                for (let col = 0; col < COLS; col++) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        board[row][col] = 2;
+                        const eval = minimax(board, depth - 1, false, alpha, beta);
+                        board[row][col] = 0;
+                        
+                        maxEval = Math.max(maxEval, eval);
+                        alpha = Math.max(alpha, eval);
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                
+                for (let col = 0; col < COLS; col++) {
+                    if (canDropInColumn(col)) {
+                        const row = getDropRow(col);
+                        board[row][col] = 1;
+                        const eval = minimax(board, depth - 1, true, alpha, beta);
+                        board[row][col] = 0;
+                        
+                        minEval = Math.min(minEval, eval);
+                        beta = Math.min(beta, eval);
+                        
+                        if (beta <= alpha) break;
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        function evaluateBoard(board) {
+            let score = 0;
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        score += evaluatePosition(board, row, col, board[row][col]);
+                    }
+                }
+            }
+            
+            return score;
+        }
+
+        function evaluatePosition(board, row, col, player) {
+            let totalScore = 0;
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            
+            for (let [dRow, dCol] of directions) {
+                const lineScore = evaluateLine(board, row, col, dRow, dCol, player);
+                totalScore += lineScore;
+            }
+            
+            totalScore += getPositionalScore(row, col, player);
+            return totalScore;
+        }
+
+        function evaluateLine(board, startRow, startCol, dRow, dCol, player) {
+            const prevRow = startRow - dRow;
+            const prevCol = startCol - dCol;
+            
+            if (prevRow >= 0 && prevRow < ROWS && prevCol >= 0 && prevCol < COLS &&
+                board[prevRow][prevCol] === player && !blockedCells.has(`${prevRow}-${prevCol}`)) {
+                return 0;
+            }
+            
+            let consecutiveCount = 1;
+            let openEnds = 0;
+            
+            let r = startRow + dRow;
+            let c = startCol + dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   board[r][c] === player && !blockedCells.has(`${r}-${c}`) && consecutiveCount < 4) {
+                consecutiveCount++;
+                r += dRow;
+                c += dCol;
+            }
+            
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            r = startRow - dRow;
+            c = startCol - dCol;
+            if (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                board[r][c] === 0 && !blockedCells.has(`${r}-${c}`)) {
+                openEnds++;
+            }
+            
+            let score = 0;
+            if (consecutiveCount >= 4) {
+                score = 1000;
+            } else if (consecutiveCount === 3) {
+                score = openEnds > 0 ? 60 : 30;
+            } else if (consecutiveCount === 2) {
+                score = openEnds > 1 ? 15 : 8;
+            } else {
+                score = 2;
+            }
+            
+            return player === 2 ? score : -score * 0.9;
+        }
+
+        function getPositionalScore(row, col, player) {
+            let score = 0;
+            
+            const centerDistance = Math.abs(col - COLS/2);
+            score += Math.max(0, 8 - centerDistance);
+            
+            score += (ROWS - row) * 0.5;
+            score += getConnectivityBonus(row, col, player) * 0.3;
+            
+            return player === 2 ? score : -score * 0.8;
+        }
+
+        function getConnectivityBonus(row, col, player) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+            let connectivityScore = 0;
+            
+            for (let [dRow, dCol] of directions) {
+                let potentialLength = 1;
+                
+                for (let dir of [-1, 1]) {
+                    let r = row + (dRow * dir);
+                    let c = col + (dCol * dir);
+                    let steps = 0;
+                    
+                    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && steps < 3 &&
+                           !blockedCells.has(`${r}-${c}`) && 
+                           (grid[r][c] === 0 || grid[r][c] === player)) {
+                        if (grid[r][c] === player) potentialLength++;
+                        r += (dRow * dir);
+                        c += (dCol * dir);
+                        steps++;
+                    }
+                }
+                
+                if (potentialLength >= 3) {
+                    connectivityScore += potentialLength;
+                }
+            }
+            
+            return connectivityScore;
+        }
+
+        function isTerminalNode(board) {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col] !== 0 && !blockedCells.has(`${row}-${col}`)) {
+                        if (checkForWinSimulation(row, col, board[row][col])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            
+            let hasValidMove = false;
+            for (let col = 0; col < COLS && !hasValidMove; col++) {
+                if (canDropInColumn(col)) {
+                    hasValidMove = true;
+                }
+            }
+            
+            return !hasValidMove;
+        }
+
+        function canDropInColumn(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function hasAnyValidMove() {
+            for (let col = 0; col < COLS; col++) if (canDropInColumn(col)) return true;
+            return false;
+        }
+
+        function getWinnerLabel() {
+            if (redGames > blueGames) return (gameMode === 'single') ? 'You (Red)' : 'Player 1 (Red)';
+            if (blueGames > redGames) {
+                if (gameMode === 'single') {
+                    const diff = aiDifficulty ? ` - ${aiDifficulty.charAt(0).toUpperCase() + aiDifficulty.slice(1)}` : '';
+                    return `Computer (Blue)${diff}`;
+                }
+                return 'Player 2 (Blue)';
+            }
+            return 'Tie';
+        }
+
+        function showEndGameModal() {
+            gameActive = false;
+            const modal = document.getElementById('endGameModal');
+            const title = document.getElementById('endGameTitle');
+            const subtitle = document.getElementById('endGameSubtitle');
+            const winnerLabel = getWinnerLabel();
+            
+            title.textContent = 'Game Over';
+            
+            // Create scoreboard display
+            if (redGames === blueGames) {
+                // Draw - white text
+                subtitle.innerHTML = `<strong style="color: white;">Draw</strong><br>Final Score: ${redGames} - ${blueGames}`;
+            } else if (redGames > blueGames) {
+                // Red wins - red text
+                subtitle.innerHTML = `<strong style="color: #ff4444;">${winnerLabel} Wins!</strong><br>Final Score: ${redGames} - ${blueGames}`;
+            } else {
+                // Blue wins - blue text
+                subtitle.innerHTML = `<strong style="color: #4444ff;">${winnerLabel} Wins!</strong><br>Final Score: ${redGames} - ${blueGames}`;
+            }
+            
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function hideEndGameModal() {
+            const modal = document.getElementById('endGameModal');
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function checkEndOfGame() {
+            if (!hasAnyValidMove()) showEndGameModal();
+        }
+
+        function getDropRow(col) {
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (grid[row][col] === 0 && !blockedCells.has(`${row}-${col}`)) {
+                    return row;
+                }
+            }
+            return -1;
+        }
+
+        function checkForWinSimulation(row, col, player) {
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+            for (let [dRow, dCol] of directions) {
+                const line = getLine(row, col, dRow, dCol, player);
+                if (line.length >= 4) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateCellDisplay(row, col) {
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('last-move'));
+            
+            if (grid[row][col] === 1) {
+                cell.className = 'cell red';
+            } else if (grid[row][col] === 2) {
+                cell.className = 'cell blue';
+            } else {
+                cell.className = 'cell';
+            }
+            
+            if (lastMovePosition && 
+                lastMovePosition.row === row && 
+                lastMovePosition.col === col && 
+                !blockedCells.has(`${row}-${col}`)) {
+                cell.classList.add('last-move');
+            }
+            
+            if (!cell.classList.contains('last-move')) {
+                cell.style.border = '1px solid rgba(255, 255, 255, 0.4)';
+            }
+        }
+
+        function updateAllCellDisplays() {
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('last-move'));
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    updateCellDisplay(row, col);
+                }
+            }
+        }
+
+        function checkForWin(row, col) {
+            const player = grid[row][col];
+            const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+            for (let [dRow, dCol] of directions) {
+                const line = getLine(row, col, dRow, dCol, player);
+                if (line.length >= 4) {
+                    boxOffConnectedArea(line, player);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function getLine(startRow, startCol, dRow, dCol, player) {
+            const line = [{row: startRow, col: startCol}];
+            
+            let r = startRow + dRow;
+            let c = startCol + dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   grid[r][c] === player && !blockedCells.has(`${r}-${c}`)) {
+                line.push({row: r, col: c});
+                r += dRow;
+                c += dCol;
+            }
+            
+            r = startRow - dRow;
+            c = startCol - dCol;
+            while (r >= 0 && r < ROWS && c >= 0 && c < COLS && 
+                   grid[r][c] === player && !blockedCells.has(`${r}-${c}`)) {
+                line.unshift({row: r, col: c});
+                r -= dRow;
+                c -= dCol;
+            }
+            
+            return line;
+        }
+
+        function boxOffConnectedArea(winningLine, player) {
+            const connectedSquares = new Set();
+            const queue = [...winningLine];
+            
+            winningLine.forEach(({row, col}) => {
+                if (!blockedCells.has(`${row}-${col}`)) {
+                    connectedSquares.add(`${row}-${col}`);
+                }
+            });
+            
+            while (queue.length > 0) {
+                const {row, col} = queue.shift();
+                
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        
+                        const newRow = row + dr;
+                        const newCol = col + dc;
+                        const key = `${newRow}-${newCol}`;
+                        
+                        if (newRow >= 0 && newRow < ROWS && 
+                            newCol >= 0 && newCol < COLS && 
+                            !connectedSquares.has(key) &&
+                            !blockedCells.has(key)) {
+                            
+                            if (grid[newRow][newCol] !== 0) {
+                                connectedSquares.add(key);
+                                queue.push({row: newRow, col: newCol});
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (connectedSquares.size === 0) return;
+            
+            const squares = Array.from(connectedSquares).map(key => {
+                const [r, c] = key.split('-').map(Number);
+                return {row: r, col: c};
+            });
+            
+            const minRow = Math.min(...squares.map(s => s.row));
+            const maxRow = Math.max(...squares.map(s => s.row));
+            const minCol = Math.min(...squares.map(s => s.col));
+            const maxCol = Math.max(...squares.map(s => s.col));
+            
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const key = `${r}-${c}`;
+                    if (!blockedCells.has(key)) {
+                        blockedCells.add(key);
+                    }
+                }
+            }
+            
+            updateAllCellDisplays();
+            drawOutlineRect(minRow, maxRow, minCol, maxCol, player);
+        }
+
+        function updateDisplay() {
+            document.getElementById('redGames').textContent = redGames;
+            document.getElementById('blueGames').textContent = blueGames;
+            
+            const redScore = document.getElementById('redScore');
+            const blueScore = document.getElementById('blueScore');
+            
+            redScore.classList.remove('leading');
+            blueScore.classList.remove('leading');
+            
+            if (redGames > blueGames) {
+                redScore.classList.add('leading');
+            } else if (blueGames > redGames) {
+                blueScore.classList.add('leading');
+            }
+            
+            const currentPlayerSpan = document.getElementById('currentPlayer');
+            const currentPlayerBanner = document.getElementById('currentPlayerBanner');
+            
+            currentPlayerBanner.classList.remove('player1-turn', 'player2-turn');
+            
+            if (currentPlayer === 1) {
+                if (gameMode === 'single') {
+                    currentPlayerSpan.textContent = 'You (Red)';
+                } else {
+                    currentPlayerSpan.textContent = 'Player 1 (Red)';
+                }
+                currentPlayerSpan.className = 'player1';
+                currentPlayerBanner.classList.add('player1-turn');
+            } else {
+                if (gameMode === 'single') {
+                    currentPlayerSpan.textContent = 'Computer (Blue)';
+                    currentPlayerSpan.className = 'player2 computer-turn';
+                } else {
+                    currentPlayerSpan.textContent = 'Player 2 (Blue)';
+                    currentPlayerSpan.className = 'player2';
+                }
+                currentPlayerBanner.classList.add('player2-turn');
+            }
+        }
+
+        function startNewGame() {
+            const outlineLayer = document.getElementById('outlineLayer');
+            if (outlineLayer) outlineLayer.innerHTML = '';
+            
+            redGames = 0;
+            blueGames = 0;
+            
+            initGame();
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                const instructionsModal = document.getElementById('instructionsModal');
+                const difficultyModal = document.getElementById('difficultySelectModal');
+                
+                if (instructionsModal && !instructionsModal.classList.contains('hidden')) {
+                    closeInstructions();
+                }
+                if (difficultyModal && !difficultyModal.classList.contains('hidden')) {
+                    difficultyModal.classList.add('hidden');
+                    difficultyModal.setAttribute('aria-hidden', 'true');
+                }
+            }
+        });
+
+        document.getElementById('instructionsModal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeInstructions();
+        });
+
+        // NEW: Add event listener for difficulty modal
+        document.getElementById('difficultySelectModal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) {
+                e.currentTarget.classList.add('hidden');
+                e.currentTarget.setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        document.getElementById('endGameModal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) { /* keep modal open on backdrop click */ }
+        });
+
+        document.getElementById('tryAgainBtn').addEventListener('click', () => {
+            hideEndGameModal();
+            redGames = 0;
+            blueGames = 0;
+            initGame();
+            updateDisplay();
+        });
+
+        document.getElementById('changeModeBtn').addEventListener('click', () => {
+            hideEndGameModal();
+            const outlineLayer = document.getElementById('outlineLayer');
+            if (outlineLayer) outlineLayer.innerHTML = '';
+            redGames = 0;
+            blueGames = 0;
+            gameActive = false;
+            gameMode = null;
+            aiDifficulty = null;
+            updateLabelsForMode();
+            const modeModal = document.getElementById('modeSelectModal');
+            modeModal.classList.remove('hidden');
+            modeModal.setAttribute('aria-hidden', 'false');
+            updateDisplay();
+        });
+
+        // Initialize page - show mode select modal first
+    </script>
+</body>
+</html>
