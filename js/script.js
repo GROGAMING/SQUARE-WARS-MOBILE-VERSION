@@ -27,6 +27,7 @@ import {
   updateLabelsForModeUI,
   ensureBoxesSvgSizedForLayer,
   anyModalOpen,
+  applyResponsiveScale,
 } from "./ui.js";
 
 import { chooseComputerMove } from "./ai.js";
@@ -41,9 +42,6 @@ let lastMovePosition = null;
 let gameMode = null;
 let scoringMode = SCORING_MODES.CLASSIC;
 let aiDifficulty = null;
-
-// at top with your other imports
-import { applyResponsiveScale } from "./ui.js";
 
 // Quick Fire target
 let quickFireTarget = QUICKFIRE_DEFAULT;
@@ -424,6 +422,70 @@ function boxOffConnectedArea(winningLine, player) {
 }
 
 /* ------------ Controls: Reset + Change Mode ------------ */
+function bindModalButtons() {
+  const modeModal = document.getElementById(UI_IDS.modeSelectModal);
+  if (modeModal) {
+    modeModal.querySelectorAll("[data-mode]").forEach((btn) => {
+      const mode = btn.getAttribute("data-mode");
+      if (!mode) return;
+      btn.addEventListener("click", () => {
+        if (mode === GAME_MODES.SINGLE || mode === GAME_MODES.MULTI) {
+          setGameMode(mode);
+        }
+      });
+    });
+  }
+
+  const scoringModal = document.getElementById(UI_IDS.scoringSelectModal);
+  if (scoringModal) {
+    scoringModal.querySelectorAll("[data-scoring]").forEach((btn) => {
+      const scoring = btn.getAttribute("data-scoring");
+      if (!scoring) return;
+      btn.addEventListener("click", () => setScoringMode(scoring));
+    });
+  }
+
+  const quickfireModal = document.getElementById(UI_IDS.quickfireSelectModal);
+  if (quickfireModal) {
+    const startBtn = quickfireModal.querySelector('[data-action="qf-start"]');
+    if (startBtn) startBtn.addEventListener("click", confirmQuickfire);
+
+    const cancelBtn = quickfireModal.querySelector('[data-action="qf-cancel"]');
+    if (cancelBtn) cancelBtn.addEventListener("click", backFromQuickfire);
+  }
+
+  const quickfireInput = document.getElementById("qfTarget");
+  if (quickfireInput) {
+    const handleInput = (event) => {
+      const target = event.currentTarget || event.target;
+      if (target && target instanceof HTMLInputElement) {
+        onQuickfireInput(target);
+      } else {
+        onQuickfireInput(quickfireInput);
+      }
+    };
+    quickfireInput.addEventListener("input", handleInput);
+    quickfireInput.addEventListener("change", handleInput);
+  }
+
+  const difficultyModal = document.getElementById(UI_IDS.difficultySelectModal);
+  if (difficultyModal) {
+    difficultyModal.querySelectorAll("[data-difficulty]").forEach((btn) => {
+      const difficulty = btn.getAttribute("data-difficulty");
+      if (!difficulty) return;
+      btn.addEventListener("click", () => setDifficulty(difficulty));
+    });
+  }
+
+  const instructionsModal = document.getElementById(UI_IDS.instructionsModal);
+  if (instructionsModal) {
+    const closeBtn = instructionsModal.querySelector(
+      '[data-action="close-instructions"]'
+    );
+    if (closeBtn) closeBtn.addEventListener("click", closeInstructions);
+  }
+}
+
 function ensureControlsUI() {
   const controls = document.querySelector(".controls");
   if (!controls) return;
@@ -664,4 +726,5 @@ window.restoreGame = (json) => restoreFromState(JSON.parse(json));
 window.applyRemoteMove = applyRemoteMove;
 
 // initialize buttons on first load
+bindModalButtons();
 ensureControlsUI();
