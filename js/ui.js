@@ -11,52 +11,106 @@ import {
 } from "./constants.js";
 
 // === Responsive board scaling ===
-export function applyResponsiveScale() {
-  const outer = document.getElementById("gridOuter");
-  const inner = document.getElementById("gridContainer");
-  if (!outer || !inner) return;
+export function applyResponsiveScale() {␊
+  const outer = document.getElementById("gridOuter");␊
+  const inner = document.getElementById("gridContainer");␊
+  if (!outer || !inner) return;␊
+␊
+  const previousTransform = inner.style.transform;
+  inner.style.transform = "none";
+  const intrinsicW = inner.offsetWidth;
+  const intrinsicH = inner.offsetHeight;
+  inner.style.transform = previousTransform;
 
-  // Intrinsic pixel size of the board (matches your CSS constants)
-  // grid: COLS*CELL + (COLS-1)*GAP + grid padding(16)
-  // wrap: + container padding(16) + container border(8)
-  const cols = 30,
-    rows = 20; // same as constants
-  const CELL = 20,
-    GAP = 2; // same as constants
-  const GRID_PAD = 16; // .grid { padding: 8px 8px } -> 16
-  const CONTAINER_PAD = 16; // .grid-container { padding: 8px 8px } -> 16
-  const CONTAINER_BORDER = 8; // .grid-container { border: 4px } -> 8 total
+  if (!intrinsicW || !intrinsicH) return;
 
-  const intrinsicW =
-    cols * CELL +
-    (cols - 1) * GAP +
-    GRID_PAD +
-    CONTAINER_PAD +
-    CONTAINER_BORDER; // 698
-  const intrinsicH =
-    rows * CELL +
-    (rows - 1) * GAP +
-    GRID_PAD +
-    CONTAINER_PAD +
-    CONTAINER_BORDER; // 478
+  const viewport = window.visualViewport || window;
+  const viewportWidth =
+    viewport.width || window.innerWidth || document.documentElement.clientWidth || 360;
+  const viewportHeight =
+    viewport.height || window.innerHeight || document.documentElement.clientHeight || 640;
 
-  // Available width: full viewport minus some breathing room
-  const vw = Math.max(
-    320,
-    window.innerWidth || document.documentElement.clientWidth || 360
-  );
-  const maxW = vw - 24; // page padding/margins
-  const scale = Math.min(1, maxW / intrinsicW);
+  const horizontalPadding = 24; // mirror body padding so we avoid side-scroll
+  const maxWidth = Math.max(320, viewportWidth - horizontalPadding);
+  const scaleFromWidth = maxWidth / intrinsicW;
 
-  // Apply scale to the inner board; reserve the scaled height on the outer
+  const outerRect = outer.getBoundingClientRect();
+  const safeTop = Math.max(0, outerRect.top);
+  const verticalPadding = 16; // a little breathing room below the board
+  const availableHeight = viewportHeight - safeTop - verticalPadding;
+  const scaleFromHeight =
+    availableHeight > 0 ? availableHeight / intrinsicH : Number.POSITIVE_INFINITY;
+
+  let scale = Math.min(1, scaleFromWidth, scaleFromHeight);
+  if (!Number.isFinite(scale) || scale <= 0) {
+    scale = Math.min(1, scaleFromWidth || 1);
+  }
+
+  inner.style.transformOrigin = "top center";
   inner.style.transform = `scale(${scale})`;
-  outer.style.height = `${Math.round(intrinsicH * scale)}px`;
   outer.style.width = `${Math.round(intrinsicW * scale)}px`;
+  outer.style.height = `${Math.round(intrinsicH * scale)}px`;
   outer.style.margin = "0 auto";
-}
+
+  ensureBoxesSvgSizedForLayer();
+}␊
 
 /** Track which move is the real "last move" to avoid race conditions */
 let uiLastMoveToken = 0;
+
+function animateGhostDrop(ghost, row, onFinish) {
+  const distance = (row + 1) * (CELL + GAP);
+  const overshoot = Math.min(12, distance * 0.08);
+  const duration = Math.max(360, Math.min(720, distance * 1.6));
+  const prefersReduced =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const resolvedDuration = prefersReduced ? Math.min(280, duration) : duration;
+  const resolvedOvershoot = prefersReduced ? 0 : overshoot;
+
+  let fallbackTimer;
+  let finished = false;
+  const finishOnce = () => {
+    if (finished) return;
+    finished = true;
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    ghost.classList.remove("drop-in");
+    ghost.style.removeProperty("--drop-start");
+    ghost.style.removeProperty("--drop-overshoot");
+    ghost.style.removeProperty("--drop-duration");
+    onFinish();
+  };
+
+  if (typeof ghost.animate === "function") {
+    const animation = ghost.animate(
+      [
+        { transform: `translateY(${-distance}px) scale(0.94)`, opacity: 0 },
+        {
+          transform: `translateY(${resolvedOvershoot}px) scale(1.02)`,
+          opacity: 1,
+          offset: 0.75,
+        },
+        { transform: "translateY(0) scale(1)", opacity: 1 },
+      ],
+      {
+        duration: resolvedDuration,
+        easing: "cubic-bezier(0.24, 0.92, 0.32, 1)",
+        fill: "forwards",
+      }
+    );
+    animation.onfinish = finishOnce;
+    animation.oncancel = finishOnce;
+    fallbackTimer = window.setTimeout(finishOnce, resolvedDuration + 120);
+  } else {
+    ghost.classList.add("drop-in");
+    ghost.style.setProperty("--drop-start", `${-distance}px`);
+    ghost.style.setProperty("--drop-overshoot", `${resolvedOvershoot}px`);
+    ghost.style.setProperty("--drop-duration", `${resolvedDuration}ms`);
+    fallbackTimer = window.setTimeout(finishOnce, resolvedDuration + 120);
+    ghost.addEventListener("animationend", finishOnce, { once: true });
+  }
+}
 
 /** Is any modal open? */
 export function anyModalOpen() {
@@ -189,13 +243,10 @@ export function updateCellDisplay(
   const left = cellRect.left - layerRect.left;
   const top = cellRect.top - layerRect.top;
 
-  const ghost = document.createElement("div");
-  ghost.className = `chip-ghost ${
-    player === PLAYER.RED ? "red" : "blue"
-  } drop-in`;
+ const ghost = document.createElement("div");
+  ghost.className = `chip-ghost ${player === PLAYER.RED ? "red" : "blue"}`;
   ghost.style.left = `${left}px`;
   ghost.style.top = `${top}px`;
-  ghost.style.setProperty("--drop-y", `${(row + 1) * (CELL + GAP)}px`);
   outlineLayer.appendChild(ghost);
 
   const finish = () => {
@@ -204,8 +255,6 @@ export function updateCellDisplay(
 
     if (grid[row][col] === PLAYER.RED) cell.className = "cell red";
     else if (grid[row][col] === PLAYER.BLUE) cell.className = "cell blue";
-    else cell.className = "cell";
-
     const key = `${row}-${col}`;
     const isBlocked = blockedCells.has(key);
     if (isBlocked) {
@@ -219,12 +268,12 @@ export function updateCellDisplay(
           .querySelectorAll(".cell.last-move")
           .forEach((el) => el.classList.remove(CSS.LAST_MOVE));
         cell.classList.add(CSS.LAST_MOVE);
-      }
-    }
-  };
-
-  ghost.addEventListener("animationend", finish, { once: true });
-}
+        }␊
+    }␊
+  };␊
+␊
+  animateGhostDrop(ghost, row, finish);
+}␊
 
 /** Update every cell */
 export function updateAllCellDisplays(
@@ -511,3 +560,4 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
