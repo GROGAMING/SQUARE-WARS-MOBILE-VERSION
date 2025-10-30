@@ -27,6 +27,7 @@ import {
   updateLabelsForModeUI,
   ensureBoxesSvgSizedForLayer,
   anyModalOpen,
+  applyResponsiveScale,
 } from "./ui.js";
 
 import { chooseComputerMove } from "./ai.js";
@@ -41,9 +42,6 @@ let lastMovePosition = null;
 let gameMode = null;
 let scoringMode = SCORING_MODES.CLASSIC;
 let aiDifficulty = null;
-
-// at top with your other imports
-import { applyResponsiveScale } from "./ui.js";
 
 // Quick Fire target
 let quickFireTarget = QUICKFIRE_DEFAULT;
@@ -665,3 +663,4 @@ window.applyRemoteMove = applyRemoteMove;
 
 // initialize buttons on first load
 ensureControlsUI();
+
