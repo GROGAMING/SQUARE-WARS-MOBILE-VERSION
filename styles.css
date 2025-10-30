@@ -286,6 +286,7 @@ h1 {
     0 4px 12px rgba(0, 0, 0, 0.25);
   will-change: transform, opacity;
 }
+ transform: translateZ(0);
 .chip-ghost.red {
   background: linear-gradient(145deg, var(--p1), #ff5252);
   border-color: #ff3b3b;
@@ -295,17 +296,17 @@ h1 {
   border-color: #1b83e5;
 }
 .chip-ghost.drop-in {
-  animation: dropIn 800ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+   animation: dropIn var(--drop-duration, 520ms)
+    cubic-bezier(0.24, 0.92, 0.32, 1) forwards;
 }
-
 /* Shared keyframes */
 @keyframes dropIn {
   0% {
-    transform: translateY(calc(-1 * var(--drop-y, 100px))) scale(0.96);
+    transform: translateY(var(--drop-start, -140px)) scale(0.94);
     opacity: 0;
   }
-  70% {
-    transform: translateY(3px) scale(1.015);
+   75% {
+    transform: translateY(var(--drop-overshoot, 8px)) scale(1.02);
     opacity: 1;
   }
   100% {
@@ -744,7 +745,7 @@ button:active {
 /* Reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .chip-ghost.drop-in {
-    animation: dropIn 300ms linear forwards !important;
+   animation: dropIn var(--drop-duration, 240ms) linear forwards !important;
   }
   .sparkle-corner span {
     animation: fadeSparkle 400ms ease-out forwards;
