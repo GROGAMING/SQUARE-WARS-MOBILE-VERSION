@@ -565,11 +565,11 @@ window.addEventListener("resize", () => {
   applyResponsiveScale();
 });
 
-document␊
-  .getElementById(UI_IDS.instructionsModal)␊
-  .addEventListener("click", (e) => {␊
-    if (e.target === e.currentTarget) closeInstructions();␊
-  });␊
+document
+  .getElementById(UI_IDS.instructionsModal)
+  .addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeInstructions();
+  });
 
 document
   .getElementById(UI_IDS.difficultySelectModal)
@@ -728,4 +728,5 @@ window.applyRemoteMove = applyRemoteMove;
 // initialize buttons on first load
 bindModalButtons();
 ensureControlsUI();
+
 
