@@ -70,16 +70,42 @@ export function applyResponsiveScale() {
   const paddingTop = parseFloat(bodyStyles.paddingTop) || 0;
   const paddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
 
-  const availableWidth = Math.max(
+  let controlsReserve = 0;
+  const controls = document.querySelector(".controls");
+  if (controls) {
+    const controlsRect = controls.getBoundingClientRect();
+    const controlStyles = window.getComputedStyle(controls);
+    const controlMarginTop = parseFloat(controlStyles.marginTop) || 0;
+    const controlMarginBottom = parseFloat(controlStyles.marginBottom) || 0;
+    controlsReserve = Math.max(0, controlsRect.height) + controlMarginTop + controlMarginBottom;
+  }
+
+  let availableWidth = Math.max(
     240,
     viewportWidth - paddingLeft - paddingRight - viewportOffsetLeft - viewportOffsetRight
   );
+
+  const shell = outer.closest(".app-shell");
+  if (shell) {
+    const shellStyles = window.getComputedStyle(shell);
+    const shellPaddingLeft = parseFloat(shellStyles.paddingLeft) || 0;
+    const shellPaddingRight = parseFloat(shellStyles.paddingRight) || 0;
+    const shellRect = shell.getBoundingClientRect();
+    const shellWidth = shellRect.width - shellPaddingLeft - shellPaddingRight;
+    if (shellWidth > 0) {
+      availableWidth = Math.min(availableWidth, shellWidth);
+    }
+  }
 
   const outerRect = outer.getBoundingClientRect();
   const topInViewport = outerRect.top - viewportOffsetTop;
   const safeTop = Math.max(0, topInViewport - paddingTop);
   const verticalPadding = paddingBottom + viewportOffsetBottom + 24;
-  const availableHeight = viewportHeight - safeTop - verticalPadding;
+  const availableHeight = Math.max(
+    1,
+    viewportHeight - safeTop - verticalPadding - controlsReserve
+  );
+
 
   let scaleFromWidth = availableWidth / BASE_WIDTH;
   if (!Number.isFinite(scaleFromWidth) || scaleFromWidth <= 0) {
@@ -725,6 +751,7 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
 
 
 
