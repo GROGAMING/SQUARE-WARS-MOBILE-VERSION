@@ -9,6 +9,14 @@
   --highlight: #ffd166;
   --text: #f8f9fa;
   --muted: #b7b9c5;
+  --cell-size: 20px;
+  --cell-gap: 2px;
+  --grid-padding: 8px;
+  --grid-radius: 8px;
+  --container-padding: 8px;
+  --container-border: 4px;
+  --container-radius: 12px;
+  --outline-inset: 12px;
 }
 
 /* Global */
@@ -199,33 +207,32 @@ h1 {
 
 /* Grid */
 .grid-container {
-  border: 4px solid rgba(255, 255, 255, 0.12);
+ border: var(--container-border) solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.06);
   position: relative;
-  border-radius: 12px;
-  padding: 8px;
+  border-radius: var(--container-radius);
+  padding: var(--container-padding);
   box-shadow: 0 16px 64px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(30, 20px);
-  grid-template-rows: repeat(20, 20px);
-  gap: 2px;
+  border-radius: var(--container-radius);
+  padding: var(--container-padding);
   background: rgba(255, 255, 255, 0.06);
-  padding: 8px;
-  border-radius: 8px;
+  padding: var(--grid-padding);
+  border-radius: var(--grid-radius);
   position: relative;
   z-index: 1;
 }
 
 /* Cells */
 .cell {
-  width: 20px;
-  height: 20px;
+  width: var(--cell-size);
+  height: var(--cell-size);
   background: linear-gradient(145deg, #f8f9fa, #e9ecef);
   border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 4px;
+  border-radius: calc(var(--cell-size) * 0.2);
   cursor: pointer;
   transition: 0.2s;
   position: relative;
@@ -276,17 +283,17 @@ h1 {
 /* NEW: Ghost chip that falls while the real cell stays white */
 .chip-ghost {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border-radius: calc(var(--cell-size) * 0.2);
   border: 1px solid rgba(255, 255, 255, 0.35);
   pointer-events: none;
   z-index: 40;
   box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
     0 4px 12px rgba(0, 0, 0, 0.25);
   will-change: transform, opacity;
+    transform: translateZ(0);
 }
- transform: translateZ(0);
 .chip-ghost.red {
   background: linear-gradient(145deg, var(--p1), #ff5252);
   border-color: #ff3b3b;
@@ -807,20 +814,31 @@ button:active {
 .hidden {
   display: none !important;
 }
-/* --- Mobile-friendly board scaling wrapper --- */
+/* --- Mobile-friendly board wrapper (sizes via CSS variables) --- */
 .grid-outer {
   width: 100%;
   max-width: 100vw;
   margin: 0 auto;
-  /* we'll set explicit height from JS after computing scale */
+
   position: relative;
-  overflow: hidden; /* no sideways scroll on small screens */
+
+    display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
-/* scale will be applied to this inner element */
-#gridContainer {
-  transform-origin: top center;
-  will-change: transform;
+
+ #gridContainer  {
+  margin: 0 auto;
+}
+
+#outlineLayer {
+  position: absolute;
+  inset: var(--outline-inset, 12px);
+  pointer-events: none;
+  z-index: 20;
 }
 
 /* Stop “jitter” on phones: keep banner height stable and avoid wrap */
