@@ -565,6 +565,12 @@ window.addEventListener("resize", () => {
   applyResponsiveScale();
 });
 
+if (window.visualViewport) {
+  const recalcScale = () => applyResponsiveScale();
+  window.visualViewport.addEventListener("resize", recalcScale);
+  window.visualViewport.addEventListener("scroll", recalcScale);
+}
+
 document
   .getElementById(UI_IDS.instructionsModal)
   .addEventListener("click", (e) => {
@@ -728,5 +734,6 @@ window.applyRemoteMove = applyRemoteMove;
 // initialize buttons on first load
 bindModalButtons();
 ensureControlsUI();
+
 
 
