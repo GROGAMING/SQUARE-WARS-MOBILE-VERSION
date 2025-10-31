@@ -1,0 +1,59 @@
+name: Apply Codex Patch From Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  apply:
+    if: contains(github.event.comment.body, '/apply-diff')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract patch from comment
+        run: |
+          python - <<'PY'
+          import os, re, sys
+          body = os.environ['COMMENT_BODY']
+          m = re.search(r'```(?:diff|patch)?\n(.*?)\n```', body, re.S)
+          if not m:
+            print("No ```diff``` code block found."); sys.exit(1)
+          open('codex.patch','w',encoding='utf-8').write(m.group(1))
+          PY
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+
+      - name: Create branch, apply, commit
+        run: |
+          set -e
+          BRANCH="codex-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git apply --whitespace=fix codex.patch
+          git add -A
+          git commit -m "Apply Codex patch from comment by @${{ github.event.comment.user.login }}"
+          git push --set-upstream origin "$BRANCH"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+
+      - name: Open PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = process.env.BRANCH;
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: branch,
+              base: "main",
+              title: `Codex patch: ${branch}`,
+              body: `Applied patch from comment: ${context.payload.comment.html_url}`
+            });
+            core.notice(`PR: ${pr.html_url}`);
