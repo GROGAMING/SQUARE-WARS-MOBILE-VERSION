@@ -217,6 +217,9 @@ h1 {
 }
 .grid {
   display: grid;
+  grid-template-columns: repeat(var(--cols, 30), var(--cell-size));
+  grid-template-rows: repeat(var(--rows, 20), var(--cell-size));
+  gap: var(--cell-gap);
   border-radius: var(--container-radius);
   padding: var(--container-padding);
   background: rgba(255, 255, 255, 0.06);
