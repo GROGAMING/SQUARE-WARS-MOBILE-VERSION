@@ -133,56 +133,59 @@
       </div>
     </div>
 
-    <h1 id="gameTitle">SQUARE WARS</h1>
+    <main class="app-shell" role="main">
+      <h1 id="gameTitle">SQUARE WARS</h1>
 
-    <div class="game-info">
-      <div class="scores">
-        <div class="score card player1" id="redScore">
-          <div class="badge">🔴</div>
-          <div class="labels">
-            <div class="name" id="redLabel">Player 1 (Red)</div>
-            <div class="hint">Territory</div>
+      <div class="game-info">
+        <div class="scores">
+          <div class="score card player1" id="redScore">
+            <div class="badge">🔴</div>
+            <div class="labels">
+              <div class="name" id="redLabel">Player 1 (Red)</div>
+              <div class="hint">Territory</div>
+            </div>
+            <div class="value" id="redGames">0</div>
           </div>
-          <div class="value" id="redGames">0</div>
+
+          <div class="score card player2" id="blueScore">
+            <div class="badge">🔵</div>
+            <div class="labels">
+              <div class="name" id="blueLabel">Player 2 (Blue)</div>
+              <div class="hint">Territory</div>
+            </div>
+            <div class="value" id="blueGames">0</div>
+          </div>
         </div>
 
-        <div class="score card player2" id="blueScore">
-          <div class="badge">🔵</div>
-          <div class="labels">
-            <div class="name" id="blueLabel">Player 2 (Blue)</div>
-            <div class="hint">Territory</div>
-          </div>
-          <div class="value" id="blueGames">0</div>
+        <div class="score-meter" aria-label="Score balance">
+          <div class="meter red" id="scoreMeterRed"></div>
+          <div class="meter blue" id="scoreMeterBlue"></div>
+          <div class="meter-split"></div>
+        </div>
+
+        <div class="current-player-banner" id="currentPlayerBanner">
+          Current Player:
+          <span id="currentPlayer" class="player1">Player 1 (Red)</span>
         </div>
       </div>
 
-      <div class="score-meter" aria-label="Score balance">
-        <div class="meter red" id="scoreMeterRed"></div>
-        <div class="meter blue" id="scoreMeterBlue"></div>
-        <div class="meter-split"></div>
+      <!-- Board -->
+      <div class="grid-outer" id="gridOuter">
+        <div class="grid-container" id="gridContainer">
+          <div class="grid" id="gameGrid"></div>
+          <div id="outlineLayer"></div>
+        </div>
       </div>
 
-      <div class="current-player-banner" id="currentPlayerBanner">
-        Current Player:
-        <span id="currentPlayer" class="player1">Player 1 (Red)</span>
+      <div class="controls">
+        <button>🎮 New Game</button>
       </div>
-    </div>
-
-    <!-- Board -->
-    <div class="grid-outer" id="gridOuter">
-      <div class="grid-container" id="gridContainer">
-        <div class="grid" id="gameGrid"></div>
-               <div id="outlineLayer"></div>
-      </div>
-    </div>
-
-    <div class="controls">
-      <button>🎮 New Game</button>
-    </div>
+    </main>
 
     <script type="module" src="./js/script.js?v=14"></script>
   </body>
 </html>
+
 
 
 
