@@ -872,6 +872,119 @@ button:active {
     margin: 4px 0;
   }
 }
+@media (orientation: landscape) and (max-height: 600px) {
+  :root {
+    --cell-size: min(3.6vh, calc((100vw - 240px) / 34), 20px);
+    --cell-gap: 1.2px;
+    --grid-padding: 4px;
+    --container-padding: 6px;
+    --container-border: 3px;
+    --outline-inset: 8px;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    padding: clamp(12px, 3vw, 20px);
+    display: grid;
+    grid-template-columns: minmax(180px, 300px) minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas:
+      "title board"
+      "info board"
+      "controls board";
+    align-items: stretch;
+    justify-items: stretch;
+    gap: clamp(10px, 3vw, 18px);
+  }
+
+  #gameTitle {
+    grid-area: title;
+    margin: 0;
+    text-align: left;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    justify-self: flex-start;
+  }
+
+  .game-info {
+    grid-area: info;
+    align-items: flex-start;
+    gap: clamp(8px, 2vh, 14px);
+    width: 100%;
+  }
+
+  .scores {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .score.card {
+    width: 100%;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .score.card .value {
+    font-size: clamp(20px, 3.6vw, 26px);
+  }
+
+  .score-meter {
+    width: 100%;
+    margin: 4px 0 8px;
+  }
+
+  .current-player-banner {
+    width: 100%;
+    font-size: clamp(14px, 2.4vw, 16px);
+    text-align: left;
+    padding: 10px 16px;
+    white-space: normal;
+    min-height: auto;
+  }
+
+  .grid-outer {
+    grid-area: board;
+    padding: clamp(6px, 1.5vw, 12px);
+    align-self: stretch;
+  }
+
+  .grid-container {
+    margin: 0 auto;
+    width: min(100%, 100vw);
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .grid {
+    max-width: 100%;
+    max-height: calc(100vh - 28px);
+  }
+
+  .controls {
+    grid-area: controls;
+    width: 100%;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding-bottom: 0;
+  }
+
+  .controls button {
+    width: 100%;
+    font-size: clamp(15px, 2.8vw, 17px);
+    padding: 12px 18px;
+  }
+}
 
 /* Utilities */
 .hidden {
