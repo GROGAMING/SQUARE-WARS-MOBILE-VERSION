@@ -24,24 +24,54 @@ export function applyResponsiveScale() {
 
   if (!intrinsicW || !intrinsicH) return;
 
-  const viewport = window.visualViewport || window;
-  const viewportWidth =
-    viewport.width || window.innerWidth || document.documentElement.clientWidth || 360;
-  const viewportHeight =
-    viewport.height || window.innerHeight || document.documentElement.clientHeight || 640;
+  const viewport = window.visualViewport || null;
+  const layoutWidth = window.innerWidth || document.documentElement.clientWidth || 360;
+  const layoutHeight = window.innerHeight || document.documentElement.clientHeight || 640;
+  const viewportWidth = (viewport && viewport.width) || layoutWidth;
+  const viewportHeight = (viewport && viewport.height) || layoutHeight;
+  const viewportOffsetLeft = (viewport && viewport.offsetLeft) || 0;
+  const viewportOffsetTop = (viewport && viewport.offsetTop) || 0;
+  const viewportOffsetRight = viewport
+    ? Math.max(0, layoutWidth - (viewport.offsetLeft + viewport.width))
+    : 0;
+  const viewportOffsetBottom = viewport
+    ? Math.max(0, layoutHeight - (viewport.offsetTop + viewport.height))
+    : 0;
 
-  const horizontalPadding = 24; // mirror body padding so we avoid side-scroll
-  const maxWidth = Math.max(320, viewportWidth - horizontalPadding);
-  const scaleFromWidth = maxWidth / intrinsicW;
+  const bodyStyles = window.getComputedStyle(document.body);
+  const paddingLeft = parseFloat(bodyStyles.paddingLeft) || 0;
+  const paddingRight = parseFloat(bodyStyles.paddingRight) || 0;
+  const paddingTop = parseFloat(bodyStyles.paddingTop) || 0;
+  const paddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
+
+  const availableWidth = Math.max(
+    280,
+    viewportWidth - paddingLeft - paddingRight - viewportOffsetLeft - viewportOffsetRight
+  );
+  const scaleFromWidth = availableWidth / intrinsicW;
 
   const outerRect = outer.getBoundingClientRect();
-  const safeTop = Math.max(0, outerRect.top);
-  const verticalPadding = 16; // a little breathing room below the board
+  const topInViewport = outerRect.top - viewportOffsetTop;
+  const safeTop = Math.max(0, topInViewport - paddingTop);
+  const verticalPadding = paddingBottom + viewportOffsetBottom + 24; // breathing room beneath the board
   const availableHeight = viewportHeight - safeTop - verticalPadding;
   const scaleFromHeight =
     availableHeight > 0 ? availableHeight / intrinsicH : Number.POSITIVE_INFINITY;
 
-  let scale = Math.min(1, scaleFromWidth, scaleFromHeight);
+  let scale = Math.min(1, scaleFromWidth);
+
+  const shouldClampToHeight =
+    Number.isFinite(scaleFromHeight) &&
+    scaleFromHeight > 0 &&
+    // Only clamp if the grid is already near the top of the screen. When
+    // there is other UI stacked above (scoreboard, banner, etc.) we prefer to
+    // keep the width-based scale so the board stays legible.
+    safeTop < viewportHeight * 0.35;
+
+  if (shouldClampToHeight) {
+    scale = Math.min(scale, scaleFromHeight, 1);
+  }
+
   if (!Number.isFinite(scale) || scale <= 0) {
     scale = Math.min(1, scaleFromWidth || 1);
   }
@@ -560,6 +590,7 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
 
 
 
