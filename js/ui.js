@@ -2,6 +2,8 @@
 import {
   UI_IDS,
   CSS,
+  ROWS,
+  COLS,
   CELL,
   GAP,
   GRID_PADDING,
@@ -11,18 +13,42 @@ import {
 } from "./constants.js";
 
 // === Responsive board scaling ===
+const CONTAINER_PADDING = 8;
+const CONTAINER_BORDER = 4;
+const CONTAINER_RADIUS = 12;
+const GRID_CORNER_RADIUS = 8;
+
+const BASE_WIDTH =
+  COLS * CELL +
+  (COLS - 1) * GAP +
+  2 * (GRID_PADDING + CONTAINER_PADDING + CONTAINER_BORDER);
+const BASE_HEIGHT =
+  ROWS * CELL +
+  (ROWS - 1) * GAP +
+  2 * (GRID_PADDING + CONTAINER_PADDING + CONTAINER_BORDER);
+
+let currentMetrics = {
+  cell: CELL,
+  gap: GAP,
+  gridPadding: GRID_PADDING,
+  containerPadding: CONTAINER_PADDING,
+  containerBorder: CONTAINER_BORDER,
+  containerRadius: CONTAINER_RADIUS,
+  gridRadius: GRID_CORNER_RADIUS,
+};
+
+function setBoardMetrics(metrics) {
+  currentMetrics = metrics;
+}
+
+function getBoardMetrics() {
+  return currentMetrics;
+}
+
 export function applyResponsiveScale() {
   const outer = document.getElementById("gridOuter");
   const inner = document.getElementById("gridContainer");
   if (!outer || !inner) return;
-
-  const previousTransform = inner.style.transform;
-  inner.style.transform = "none";
-  const intrinsicW = inner.offsetWidth;
-  const intrinsicH = inner.offsetHeight;
-  inner.style.transform = previousTransform;
-
-  if (!intrinsicW || !intrinsicH) return;
 
   const viewport = window.visualViewport || null;
   const layoutWidth = window.innerWidth || document.documentElement.clientWidth || 360;
@@ -45,42 +71,126 @@ export function applyResponsiveScale() {
   const paddingBottom = parseFloat(bodyStyles.paddingBottom) || 0;
 
   const availableWidth = Math.max(
-    280,
+    240,
     viewportWidth - paddingLeft - paddingRight - viewportOffsetLeft - viewportOffsetRight
   );
-  const scaleFromWidth = availableWidth / intrinsicW;
 
   const outerRect = outer.getBoundingClientRect();
   const topInViewport = outerRect.top - viewportOffsetTop;
   const safeTop = Math.max(0, topInViewport - paddingTop);
-  const verticalPadding = paddingBottom + viewportOffsetBottom + 24; // breathing room beneath the board
+  const verticalPadding = paddingBottom + viewportOffsetBottom + 24;
   const availableHeight = viewportHeight - safeTop - verticalPadding;
-  const scaleFromHeight =
-    availableHeight > 0 ? availableHeight / intrinsicH : Number.POSITIVE_INFINITY;
+
+  let scaleFromWidth = availableWidth / BASE_WIDTH;
+  if (!Number.isFinite(scaleFromWidth) || scaleFromWidth <= 0) {
+    scaleFromWidth = 1;
+  }
+
+  let scaleFromHeight = Number.POSITIVE_INFINITY;
+  if (availableHeight > 0) {
+    scaleFromHeight = availableHeight / BASE_HEIGHT;
+  }
 
   let scale = Math.min(1, scaleFromWidth);
-
-  const shouldClampToHeight =
-    Number.isFinite(scaleFromHeight) &&
-    scaleFromHeight > 0 &&
-    // Only clamp if the grid is already near the top of the screen. When
-    // there is other UI stacked above (scoreboard, banner, etc.) we prefer to
-    // keep the width-based scale so the board stays legible.
-    safeTop < viewportHeight * 0.35;
-
-  if (shouldClampToHeight) {
-    scale = Math.min(scale, scaleFromHeight, 1);
+  if (Number.isFinite(scaleFromHeight) && scaleFromHeight > 0) {
+    scale = Math.min(scale, scaleFromHeight);
   }
 
   if (!Number.isFinite(scale) || scale <= 0) {
-    scale = Math.min(1, scaleFromWidth || 1);
+    scale = 1;
   }
 
-  inner.style.transformOrigin = "top center";
-  inner.style.transform = `scale(${scale})`;
-  outer.style.width = `${Math.round(intrinsicW * scale)}px`;
-  outer.style.height = `${Math.round(intrinsicH * scale)}px`;
-  outer.style.margin = "0 auto";
+  let cell = CELL * scale;
+  let gap = GAP * scale;
+  let gridPadding = GRID_PADDING * scale;
+  let containerPadding = CONTAINER_PADDING * scale;
+  let containerBorder = CONTAINER_BORDER * scale;
+  let containerRadius = CONTAINER_RADIUS * scale;
+  let gridRadius = GRID_CORNER_RADIUS * scale;
+
+  const minCell = 1.5;
+  const minGap = 0.35;
+  const minPad = 0.75;
+  const minBorder = 0.9;
+  const minRadius = 4;
+
+  cell = Math.max(minCell, cell);
+  gap = Math.max(minGap, gap);
+  gridPadding = Math.max(minPad, gridPadding);
+  containerPadding = Math.max(minPad, containerPadding);
+  containerBorder = Math.max(minBorder, containerBorder);
+  containerRadius = Math.max(minRadius, containerRadius);
+  gridRadius = Math.max(minRadius - 1, gridRadius);
+
+  let boardWidth =
+    COLS * cell +
+    (COLS - 1) * gap +
+    2 * (gridPadding + containerPadding + containerBorder);
+  let boardHeight =
+    ROWS * cell +
+    (ROWS - 1) * gap +
+    2 * (gridPadding + containerPadding + containerBorder);
+
+  const widthCorrection =
+    availableWidth > 0 ? Math.min(1, availableWidth / boardWidth) : 1;
+  const heightCorrection =
+    availableHeight > 0 ? Math.min(1, availableHeight / boardHeight) : 1;
+  const correction = Math.min(widthCorrection, heightCorrection);
+
+  if (correction > 0 && correction < 1) {
+    cell *= correction;
+    gap *= correction;
+    gridPadding *= correction;
+    containerPadding *= correction;
+    containerBorder = Math.max(minBorder, containerBorder * correction);
+    containerRadius = Math.max(minRadius, containerRadius * correction);
+    gridRadius = Math.max(minRadius - 1, gridRadius * correction);
+
+    boardWidth =
+      COLS * cell +
+      (COLS - 1) * gap +
+      2 * (gridPadding + containerPadding + containerBorder);
+    boardHeight =
+      ROWS * cell +
+      (ROWS - 1) * gap +
+      2 * (gridPadding + containerPadding + containerBorder);
+  }
+
+  const root = document.documentElement;
+  const formatPx = (value) => `${Math.round(value * 1000) / 1000}px`;
+  root.style.setProperty("--cell-size", formatPx(cell));
+  root.style.setProperty("--cell-gap", formatPx(gap));
+  root.style.setProperty("--grid-padding", formatPx(gridPadding));
+  root.style.setProperty("--container-padding", formatPx(containerPadding));
+  root.style.setProperty("--container-border", formatPx(containerBorder));
+  root.style.setProperty("--container-radius", formatPx(containerRadius));
+  root.style.setProperty("--grid-radius", formatPx(gridRadius));
+
+  const outlineInset = containerPadding + containerBorder;
+  root.style.setProperty("--outline-inset", formatPx(outlineInset));
+
+  const widthPx = formatPx(boardWidth);
+  const heightPx = formatPx(boardHeight);
+  outer.style.width = widthPx;
+  outer.style.maxWidth = widthPx;
+  outer.style.minWidth = widthPx;
+  outer.style.height = heightPx;
+  outer.style.minHeight = heightPx;
+
+  const outlineLayer = document.getElementById(UI_IDS.outlineLayer);
+  if (outlineLayer) {
+    outlineLayer.style.inset = formatPx(outlineInset);
+  }
+
+  setBoardMetrics({
+    cell,
+    gap,
+    gridPadding,
+    containerPadding,
+    containerBorder,
+    containerRadius,
+    gridRadius,
+  });
 
   ensureBoxesSvgSizedForLayer();
 }
@@ -89,9 +199,11 @@ export function applyResponsiveScale() {
 let uiLastMoveToken = 0;
 
 function animateGhostDrop(ghost, row, onFinish) {
-  const distance = (row + 1) * (CELL + GAP);
-  const overshoot = Math.min(12, distance * 0.08);
-  const duration = Math.max(360, Math.min(720, distance * 1.6));
+  const metrics = getBoardMetrics();
+  const step = metrics.cell + metrics.gap;
+  const distance = (row + 1) * step;
+  const overshoot = Math.min(metrics.cell * 0.6, distance * 0.08);
+  const duration = Math.max(280, Math.min(720, distance * 1.6));
   const prefersReduced =
     typeof window !== "undefined" &&
     typeof window.matchMedia === "function" &&
@@ -273,7 +385,7 @@ export function updateCellDisplay(
   const left = cellRect.left - layerRect.left;
   const top = cellRect.top - layerRect.top;
 
- const ghost = document.createElement("div");
+   const ghost = document.createElement("div");
   ghost.className = `chip-ghost ${player === PLAYER.RED ? "red" : "blue"}`;
   ghost.style.left = `${left}px`;
   ghost.style.top = `${top}px`;
@@ -434,10 +546,16 @@ export function drawOutlineRect(minRow, maxRow, minCol, maxCol, player) {
   if (!layer) return;
   const svg = ensureBoxesSvg();
 
-  const x = GRID_PADDING + minCol * (CELL + GAP) - BORDER_WIDTH - 3;
-  const y = GRID_PADDING + minRow * (CELL + GAP) - BORDER_WIDTH - 3;
-  const w = (maxCol - minCol + 1) * (CELL + GAP) - GAP + BORDER_WIDTH + 6;
-  const h = (maxRow - minRow + 1) * (CELL + GAP) - GAP + BORDER_WIDTH + 6;
+  const metrics = getBoardMetrics();
+  const step = metrics.cell + metrics.gap;
+  const scaleRatio = metrics.cell / CELL;
+  const border = Math.max(1, BORDER_WIDTH * scaleRatio);
+  const halo = 3 * scaleRatio;
+
+  const x = metrics.gridPadding + minCol * step - border - halo;
+  const y = metrics.gridPadding + minRow * step - border - halo;
+  const w = (maxCol - minCol + 1) * step - metrics.gap + border + halo * 2;
+  const h = (maxRow - minRow + 1) * step - metrics.gap + border + halo * 2;
 
   const rect = document.createElementNS(svg.namespaceURI, "rect");
   rect.setAttribute("x", x);
@@ -457,8 +575,9 @@ export function drawOutlineRect(minRow, maxRow, minCol, maxCol, player) {
     player === PLAYER.RED ? "rgba(255,107,107,.9)" : "rgba(77,171,247,.9)"
   );
   rect.setAttribute("stroke-width", "3");
-  rect.setAttribute("rx", "8");
-  rect.setAttribute("ry", "8");
+  const corner = Math.max(3, 8 * scaleRatio);
+  rect.setAttribute("rx", corner);
+  rect.setAttribute("ry", corner);
 
   const group = svg.querySelector("#boxesGroup");
   group.appendChild(rect);
@@ -471,9 +590,11 @@ export function drawWinStrike(winningLine, player) {
   const first = winningLine[0];
   const last = winningLine[winningLine.length - 1];
 
+  const metrics = getBoardMetrics();
+  const step = metrics.cell + metrics.gap;
   const centerOf = (r, c) => ({
-    x: GRID_PADDING + c * (CELL + GAP) + CELL / 2,
-    y: GRID_PADDING + r * (CELL + GAP) + CELL / 2,
+    x: metrics.gridPadding + c * step + metrics.cell / 2,
+    y: metrics.gridPadding + r * step + metrics.cell / 2,
   });
 
   const p1 = centerOf(first.row, first.col);
@@ -483,12 +604,14 @@ export function drawWinStrike(winningLine, player) {
     dy = p2.y - p1.y;
   const len = Math.sqrt(dx * dx + dy * dy) + 2;
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const strokeThickness = Math.max(3, metrics.cell * 0.18);
 
   const line = document.createElement("div");
   line.className = `win-strike ${player === PLAYER.RED ? "red" : "blue"}`;
   line.style.left = `${p1.x}px`;
-  line.style.top = `${p1.y - 2}px`;
+  line.style.top = `${p1.y - strokeThickness / 2}px`;
   line.style.width = `${len}px`;
+  line.style.height = `${strokeThickness}px`;
   line.style.transformOrigin = "left center";
   line.style.transform = `rotate(${angle}deg)`;
   outlineLayer.appendChild(line);
@@ -590,6 +713,7 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
 
 
 
