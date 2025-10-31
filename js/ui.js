@@ -11,11 +11,11 @@ import {
 } from "./constants.js";
 
 // === Responsive board scaling ===
-export function applyResponsiveScale() {␊
-  const outer = document.getElementById("gridOuter");␊
-  const inner = document.getElementById("gridContainer");␊
-  if (!outer || !inner) return;␊
-␊
+export function applyResponsiveScale() {
+  const outer = document.getElementById("gridOuter");
+  const inner = document.getElementById("gridContainer");
+  if (!outer || !inner) return;
+
   const previousTransform = inner.style.transform;
   inner.style.transform = "none";
   const intrinsicW = inner.offsetWidth;
@@ -53,7 +53,7 @@ export function applyResponsiveScale() {␊
   outer.style.margin = "0 auto";
 
   ensureBoxesSvgSizedForLayer();
-}␊
+}
 
 /** Track which move is the real "last move" to avoid race conditions */
 let uiLastMoveToken = 0;
@@ -268,12 +268,12 @@ export function updateCellDisplay(
           .querySelectorAll(".cell.last-move")
           .forEach((el) => el.classList.remove(CSS.LAST_MOVE));
         cell.classList.add(CSS.LAST_MOVE);
-        }␊
-    }␊
-  };␊
-␊
+        }
+    }
+  };
+
   animateGhostDrop(ghost, row, finish);
-}␊
+}
 
 /** Update every cell */
 export function updateAllCellDisplays(
@@ -560,5 +560,6 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
 
 
