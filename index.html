@@ -17,12 +17,12 @@
       <div class="modal">
         <h2>Choose Game Mode</h2>
         <p>Select how you want to play SQUARE WARS:</p>
-        <button class="single-player" onclick="setGameMode('single')">
-          🔴 Single Player<br /><small>vs Computer</small>
-        </button>
-        <button onclick="setGameMode('multi')">
-          🔵 Multiplayer<br /><small>2 Players</small>
-        </button>
+               <button class="single-player" data-mode="single">
+          🔴 Single Player<br /><small>vs Computer</small>␊
+        </button>␊
+        <button data-mode="multi">
+          🔵 Multiplayer<br /><small>2 Players</small>␊
+        </button>␊
       </div>
     </div>
 
@@ -35,24 +35,24 @@
       <div class="modal">
         <h2>Choose Scoring Style</h2>
 
-        <button class="classic-mode" onclick="setScoringMode('classic')">
-          🧱 Classic (Box Points)<br />
-          <small>Each captured box is worth <strong>1 point</strong>.</small>
-        </button>
-
-        <button class="area-mode" onclick="setScoringMode('area')">
-          🗺️ Territory Takedown (Area Mode)<br />
-          <small
-            >Score the <strong>number of squares</strong> inside a captured
-            zone. Overlaps can <strong>steal</strong> territory!</small
-          >
-        </button>
-
-        <!-- Quick Fire goes to its own screen -->
-        <button class="quickfire-mode" onclick="setScoringMode('quickfire')">
-          ⚡ Quick Fire<br />
-          <small>Classic scoring with a win target.</small>
-        </button>
+             <button class="classic-mode" data-scoring="classic">
+          🧱 Classic (Box Points)<br />␊
+          <small>Each captured box is worth <strong>1 point</strong>.</small>␊
+        </button>␊
+␊
+        <button class="area-mode" data-scoring="area">
+          🗺️ Territory Takedown (Area Mode)<br />␊
+          <small␊
+            >Score the <strong>number of squares</strong> inside a captured␊
+            zone. Overlaps can <strong>steal</strong> territory!</small␊
+          >␊
+        </button>␊
+␊
+        <!-- Quick Fire goes to its own screen -->␊
+        <button class="quickfire-mode" data-scoring="quickfire">
+          ⚡ Quick Fire<br />␊
+          <small>Classic scoring with a win target.</small>␊
+        </button>␊
       </div>
     </div>
 
@@ -72,21 +72,20 @@
           <!-- Range + live bubble -->
           <div class="qf-range-wrap">
             <div id="qfBubble" class="qf-bubble">5</div>
-            <input
+                     <input
               type="range"
               id="qfTarget"
               min="1"
               max="10"
               step="1"
               value="5"
-              oninput="onQuickfireInput(this)"
             />
           </div>
         </div>
 
         <div class="qf-actions">
-          <button class="qf-start" onclick="confirmQuickfire()">Start</button>
-          <button class="qf-cancel" onclick="backFromQuickfire()">Back</button>
+          <button class="qf-start" data-action="qf-start">Start</button>
+          <button class="qf-cancel" data-action="qf-cancel">Back</button>
         </div>
       </div>
     </div>
@@ -101,28 +100,28 @@
         <h2>Choose Difficulty</h2>
         <p>Select the AI difficulty level:</p>
         <button class="beginner" onclick="setDifficulty('beginner')">
-          🟢 Beginner<br /><small>Fast & Friendly</small>
-        </button>
-        <button class="medium" onclick="setDifficulty('medium')">
-          🟡 Medium<br /><small>Balanced Challenge</small>
-        </button>
-        <button class="advanced" onclick="setDifficulty('advanced')">
-          🔴 Advanced<br /><small>Tough Opponent</small>
-        </button>
-        <button class="impossible" onclick="setDifficulty('impossible')">
-          🟣 Impossible<br /><small>Perfect Play</small>
-        </button>
-      </div>
-    </div>
-
+           <button class="beginner" data-difficulty="beginner">
+          🟢 Beginner<br /><small>Fast & Friendly</small>␊
+        </button>␊
+        <button class="medium" data-difficulty="medium">
+          🟡 Medium<br /><small>Balanced Challenge</small>␊
+        </button>␊
+        <button class="advanced" data-difficulty="advanced">
+          🔴 Advanced<br /><small>Tough Opponent</small>␊
+        </button>␊
+        <button class="impossible" data-difficulty="impossible">
+          🟣 Impossible<br /><small>Perfect Play</small>␊
+        </button>␊
+      </div>␊
+    </div>␊
     <!-- Instructions Modal -->
     <div id="instructionsModal" class="modal-overlay hidden" aria-hidden="true">
       <div class="modal">
         <h2 id="instructionsTitle">How to Play SQUARE WARS</h2>
         <p id="instructionsBody"></p>
-        <button onclick="closeInstructions()">Got it, let's play!</button>
-      </div>
-    </div>
+        <button data-action="close-instructions">Got it, let's play!</button>
+      </div>␊
+    </div>␊
 
     <!-- End Game Modal -->
     <div id="endGameModal" class="modal-overlay hidden" aria-hidden="true">
@@ -186,9 +185,10 @@
     </div>
 
     <div class="controls">
-      <button onclick="startNewGame()">🎮 New Game</button>
+      <button>🎮 New Game</button>
     </div>
 
     <script type="module" src="./js/script.js?v=14"></script>
   </body>
 </html>
+
