@@ -728,3 +728,4 @@ window.applyRemoteMove = applyRemoteMove;
 // initialize buttons on first load
 bindModalButtons();
 ensureControlsUI();
+
