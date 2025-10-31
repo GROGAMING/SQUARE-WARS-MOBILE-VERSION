@@ -327,6 +327,18 @@ export function buildGrid(rows, cols, onColumnClick) {
   const gameGrid = document.getElementById(UI_IDS.gameGrid);
   gameGrid.innerHTML = "";
 
+  gameGrid.style.setProperty("--rows", rows);
+  gameGrid.style.setProperty("--cols", cols);
+  gameGrid.style.setProperty(
+    "grid-template-columns",
+    `repeat(${cols}, var(--cell-size))`
+  );
+  gameGrid.style.setProperty(
+    "grid-template-rows",
+    `repeat(${rows}, var(--cell-size))`
+  );
+  gameGrid.style.setProperty("gap", "var(--cell-gap)");
+
   const frag = document.createDocumentFragment();
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -713,6 +725,7 @@ export function updateLabelsForModeUI(
     gameTitle.textContent = "SQUARE WARS";
   }
 }
+
 
 
 
