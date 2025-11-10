@@ -17,7 +17,7 @@
   --container-border: 4px;
   --container-radius: 12px;
   --outline-inset: 12px;
-}
+} 
 
 /* Global */
 html {
@@ -36,7 +36,8 @@ body {
   align-items: stretch;
   justify-content: flex-start;
   color: var(--text);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .app-shell {
