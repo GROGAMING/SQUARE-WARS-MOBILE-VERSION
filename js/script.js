@@ -387,34 +387,34 @@ function boxOffConnectedArea(winningLine, player) {
 
   if (connectedSquares.size === 0) return;
 
-  const squares = Array.from(connectedSquares).map((key) => {
-    const [r, c] = key.split("-").map(Number);
-    return { row: r, col: c };
-  });
+  const squares = Array.from(connectedSquares).map((key) => {␊
+    const [r, c] = key.split("-").map(Number);␊
+    return { row: r, col: c, key };
+  });␊
+␊
+  const rows = squares.map((s) => s.row);
+  const cols = squares.map((s) => s.col);
+  const minRow = Math.min(...rows);
+  const maxRow = Math.max(...rows);
+  const minCol = Math.min(...cols);
+  const maxCol = Math.max(...cols);
 
-  // correct spread usage
-  const minRow = Math.min(...squares.map((s) => s.row));
-  const maxRow = Math.max(...squares.map((s) => s.row));
-  const minCol = Math.min(...squares.map((s) => s.col));
-  const maxCol = Math.max(...squares.map((s) => s.col));
+  for (const square of squares) {
+    blockedCells.add(square.key);
 
-  for (let r = minRow; r <= maxRow; r++) {
-    for (let c = minCol; c <= maxCol; c++) {
-      const key = `${r}-${c}`;
-      blockedCells.add(key);
+    if (scoringMode === SCORING_MODES.AREA) {
+      const prev = ownership[square.key] | 0;
+      if (prev !== player) {
+        if (prev === PLAYER.RED) redGames--;
+        else if (prev === PLAYER.BLUE) blueGames--;
 
-      if (scoringMode === SCORING_MODES.AREA) {
-        const prev = ownership[key] | 0;
-        if (prev !== player) {
-          if (prev === PLAYER.RED) redGames--;
-          else if (prev === PLAYER.BLUE) blueGames--;
-          if (player === PLAYER.RED) redGames++;
-          else blueGames++;
-          ownership[key] = player;
-        }
-      }
-    }
-  }
+        if (player === PLAYER.RED) redGames++;
+        else blueGames++;
+
+        ownership[square.key] = player;
+      }␊
+    }␊
+  }␊
 
   updateAllCellDisplays(grid, blockedCells, lastMovePosition, ROWS, COLS);
   drawWinStrike(winningLine, player);
@@ -571,71 +571,81 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener("scroll", recalcScale);
 }
 
-document
-  .getElementById(UI_IDS.instructionsModal)
-  .addEventListener("click", (e) => {
+const instructionsModalEl = document.getElementById(UI_IDS.instructionsModal);
+if (instructionsModalEl) {
+  instructionsModalEl.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeInstructions();
   });
+}
 
-document
-  .getElementById(UI_IDS.difficultySelectModal)
-  .addEventListener("click", (e) => {
+const difficultyModalEl = document.getElementById(UI_IDS.difficultySelectModal);
+if (difficultyModalEl) {
+  difficultyModalEl.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add(CSS.HIDDEN);
       e.currentTarget.setAttribute("aria-hidden", "true");
     }
   });
+}
 
-document
-  .getElementById(UI_IDS.scoringSelectModal)
-  .addEventListener("click", (e) => {
+const scoringModalEl = document.getElementById(UI_IDS.scoringSelectModal);
+if (scoringModalEl) {
+  scoringModalEl.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) {
       e.currentTarget.classList.add(CSS.HIDDEN);
       e.currentTarget.setAttribute("aria-hidden", "true");
     }
   });
+}
 
-document
-  .getElementById(UI_IDS.endGameModal)
-  .addEventListener("click", () => {});
+const endGameModalEl = document.getElementById(UI_IDS.endGameModal);
+if (endGameModalEl) {
+  endGameModalEl.addEventListener("click", () => {});
+}
 
-document.getElementById(UI_IDS.tryAgainBtn).addEventListener("click", () => {
-  hideEndGameModal();
-  redGames = 0;
-  blueGames = 0;
-  initGame();
-  updateDisplay(
-    currentPlayer,
-    gameMode,
-    aiDifficulty,
-    scoringMode,
-    redGames,
-    blueGames
-  );
-});
+const tryAgainBtn = document.getElementById(UI_IDS.tryAgainBtn);
+if (tryAgainBtn) {
+  tryAgainBtn.addEventListener("click", () => {
+    hideEndGameModal();
+    redGames = 0;
+    blueGames = 0;
+    initGame();
+    updateDisplay(
+      currentPlayer,
+      gameMode,
+      aiDifficulty,
+      scoringMode,
+      redGames,
+      blueGames
+    );
+  });
+}
 
-document.getElementById(UI_IDS.changeModeBtn).addEventListener("click", () => {
-  hideEndGameModal();
-  const outlineLayer = document.getElementById(UI_IDS.outlineLayer);
-  if (outlineLayer) outlineLayer.innerHTML = "";
-  redGames = 0;
-  blueGames = 0;
-  gameActive = false;
-  gameMode = null;
-  aiDifficulty = null;
-  const modeModal = document.getElementById(UI_IDS.modeSelectModal);
-  modeModal.classList.remove(CSS.HIDDEN);
-  modeModal.setAttribute("aria-hidden", "false");
-  updateLabelsForModeUI(gameMode, aiDifficulty, scoringMode, quickFireTarget);
-  updateDisplay(
-    currentPlayer,
-    gameMode,
-    aiDifficulty,
-    scoringMode,
-    redGames,
-    blueGames
-  );
-});
+const changeModeBtn = document.getElementById(UI_IDS.changeModeBtn);
+if (changeModeBtn) {
+  changeModeBtn.addEventListener("click", () => {
+    hideEndGameModal();
+    const outlineLayer = document.getElementById(UI_IDS.outlineLayer);
+    if (outlineLayer) outlineLayer.innerHTML = "";
+    redGames = 0;
+    blueGames = 0;
+    gameActive = false;
+    gameMode = null;
+    aiDifficulty = null;
+    const modeModal = document.getElementById(UI_IDS.modeSelectModal);
+    modeModal.classList.remove(CSS.HIDDEN);
+    modeModal.setAttribute("aria-hidden", "false");
+    updateLabelsForModeUI(gameMode, aiDifficulty, scoringMode, quickFireTarget);
+    updateDisplay(
+      currentPlayer,
+      gameMode,
+      aiDifficulty,
+      scoringMode,
+      redGames,
+      blueGames
+    );
+  });
+}
 
 /* ------------ Simple multiplayer helpers (state in/out) ------------ */
 function getSerializableState() {
@@ -734,6 +744,7 @@ window.applyRemoteMove = applyRemoteMove;
 // initialize buttons on first load
 bindModalButtons();
 ensureControlsUI();
+
 
 
 
