@@ -127,8 +127,8 @@
       <div class="modal">
         <h2 id="endGameTitle">Game Over</h2>
         <p id="endGameSubtitle">Winner: <strong>—</strong></p>
-        <button id="tryAgainBtn">🔄 Try Again</button>
-        <button id="changeModeBtn">🛠️ Change Mode</button>
+        <button id="tryAgainBtn" data-action="tryAgain">🔄 Try Again</button>
+        <button id="changeModeBtn" data-action="changeMode">🛠️ Change Mode</button>
       </div>
     </div>
 
@@ -184,26 +184,39 @@
     <script type="module" src="./js/script.js?v=14"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        const gameGrid = document.getElementById("gameGrid");
+        const logAction = (actionName, elementId) => {
+          console.log(`Action: ${actionName}, Element: ${elementId}`);
+        };
 
-        // Add touch controls for mobile
-        if (gameGrid) {
-          gameGrid.addEventListener("touchstart", (e) => {
-            const target = e.target.closest(".cell");
-            if (target) {
-              const col = Number(target.dataset.col);
-              if (!Number.isNaN(col)) window.applyRemoteMove(col);
-            }
+        const bindButton = (selector, handler) => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach((el) => {
+            const wrappedHandler = (e) => {
+              e.preventDefault();
+              logAction(el.dataset.action || el.id, el.id || el.dataset.action);
+              handler(e);
+            };
+            el.addEventListener("pointerup", wrappedHandler);
           });
-        }
+        };
 
-        // Wire up modal buttons
-        document.querySelectorAll("[data-action]").forEach((btn) => {
-          const action = btn.getAttribute("data-action");
-          if (action && typeof window[action] === "function") {
-            btn.addEventListener("click", () => window[action]());
-          }
+        // Bind modal buttons
+        bindButton('[data-action="tryAgain"]', () => window.tryAgain());
+        bindButton('[data-action="changeMode"]', () => window.changeMode());
+        bindButton('[data-mode]', (e) => {
+          const mode = e.target.dataset.mode;
+          if (mode) window.setGameMode(mode);
         });
+        bindButton('[data-scoring]', (e) => {
+          const scoring = e.target.dataset.scoring;
+          if (scoring) window.setScoringMode(scoring);
+        });
+        bindButton('[data-difficulty]', (e) => {
+          const difficulty = e.target.dataset.difficulty;
+          if (difficulty) window.setDifficulty(difficulty);
+        });
+        bindButton('[data-action="qf-start"]', () => window.confirmQuickfire());
+        bindButton('[data-action="qf-cancel"]', () => window.backFromQuickfire());
       });
     </script>
   </body>

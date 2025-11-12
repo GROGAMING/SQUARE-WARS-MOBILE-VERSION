@@ -422,83 +422,56 @@ function boxOffConnectedArea(winningLine, player) {
 }
 
 /* ------------ Controls: Reset + Change Mode ------------ */
+function logAction(actionName, elementId) {
+  console.log(`Action: ${actionName}, Element: ${elementId}`);
+}
+
+function bindButton(selector, handler) {
+  const elements = document.querySelectorAll(selector);
+  elements.forEach((el) => {
+    const wrappedHandler = (e) => {
+      e.preventDefault();
+      logAction(el.dataset.action || el.id, el.id || el.dataset.action);
+      handler(e);
+    };
+    el.addEventListener("pointerup", wrappedHandler);
+  });
+}
+
 function bindModalButtons() {
   const modeModal = document.getElementById(UI_IDS.modeSelectModal);
   if (modeModal) {
-    modeModal.querySelectorAll("[data-mode]").forEach((btn) => {
-      const mode = btn.getAttribute("data-mode");
-      if (!mode) return;
-      btn.addEventListener("click", () => {
-        if (mode === GAME_MODES.SINGLE || mode === GAME_MODES.MULTI) {
-          setGameMode(mode);
-        }
-      });
-      btn.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        btn.click();
-      });
+    bindButton("[data-mode]", (e) => {
+      const mode = e.target.dataset.mode;
+      if (mode) setGameMode(mode);
     });
   }
 
   const scoringModal = document.getElementById(UI_IDS.scoringSelectModal);
   if (scoringModal) {
-    scoringModal.querySelectorAll("[data-scoring]").forEach((btn) => {
-      const scoring = btn.getAttribute("data-scoring");
-      if (!scoring) return;
-      btn.addEventListener("click", () => setScoringMode(scoring));
+    bindButton("[data-scoring]", (e) => {
+      const scoring = e.target.dataset.scoring;
+      if (scoring) setScoringMode(scoring);
     });
   }
 
   const quickfireModal = document.getElementById(UI_IDS.quickfireSelectModal);
   if (quickfireModal) {
-    const startBtn = quickfireModal.querySelector('[data-action="qf-start"]');
-    if (startBtn) {
-      startBtn.addEventListener("click", confirmQuickfire);
-      startBtn.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        startBtn.click();
-      });
-    }
-
-    const cancelBtn = quickfireModal.querySelector('[data-action="qf-cancel"]');
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", backFromQuickfire);
-      cancelBtn.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        cancelBtn.click();
-      });
-    }
-  }
-
-  const quickfireInput = document.getElementById("qfTarget");
-  if (quickfireInput) {
-    const handleInput = (event) => {
-      const target = event.currentTarget || event.target;
-      if (target && target instanceof HTMLInputElement) {
-        onQuickfireInput(target);
-      } else {
-        onQuickfireInput(quickfireInput);
-      }
-    };
-    quickfireInput.addEventListener("input", handleInput);
-    quickfireInput.addEventListener("change", handleInput);
+    bindButton('[data-action="qf-start"]', confirmQuickfire);
+    bindButton('[data-action="qf-cancel"]', backFromQuickfire);
   }
 
   const difficultyModal = document.getElementById(UI_IDS.difficultySelectModal);
   if (difficultyModal) {
-    difficultyModal.querySelectorAll("[data-difficulty]").forEach((btn) => {
-      const difficulty = btn.getAttribute("data-difficulty");
-      if (!difficulty) return;
-      btn.addEventListener("click", () => setDifficulty(difficulty));
+    bindButton("[data-difficulty]", (e) => {
+      const difficulty = e.target.dataset.difficulty;
+      if (difficulty) setDifficulty(difficulty);
     });
   }
 
   const instructionsModal = document.getElementById(UI_IDS.instructionsModal);
   if (instructionsModal) {
-    const closeBtn = instructionsModal.querySelector(
-      '[data-action="close-instructions"]'
-    );
-    if (closeBtn) closeBtn.addEventListener("click", closeInstructions);
+    bindButton('[data-action="close-instructions"]', closeInstructions);
   }
 }
 
