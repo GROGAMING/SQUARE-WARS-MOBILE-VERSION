@@ -387,11 +387,11 @@ function boxOffConnectedArea(winningLine, player) {
 
   if (connectedSquares.size === 0) return;
 
-  const squares = Array.from(connectedSquares).map((key) => {␊
-    const [r, c] = key.split("-").map(Number);␊
+  const squares = Array.from(connectedSquares).map((key) => 
+    {const [r, c] = key.split("-").map(Number)
     return { row: r, col: c, key };
-  });␊
-␊
+  })
+
   const rows = squares.map((s) => s.row);
   const cols = squares.map((s) => s.col);
   const minRow = Math.min(...rows);
@@ -412,9 +412,9 @@ function boxOffConnectedArea(winningLine, player) {
         else blueGames++;
 
         ownership[square.key] = player;
-      }␊
-    }␊
-  }␊
+      }
+    }
+  }
 
   updateAllCellDisplays(grid, blockedCells, lastMovePosition, ROWS, COLS);
   drawWinStrike(winningLine, player);
