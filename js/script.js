@@ -433,6 +433,10 @@ function bindModalButtons() {
           setGameMode(mode);
         }
       });
+      btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        btn.click();
+      });
     });
   }
 
@@ -448,10 +452,22 @@ function bindModalButtons() {
   const quickfireModal = document.getElementById(UI_IDS.quickfireSelectModal);
   if (quickfireModal) {
     const startBtn = quickfireModal.querySelector('[data-action="qf-start"]');
-    if (startBtn) startBtn.addEventListener("click", confirmQuickfire);
+    if (startBtn) {
+      startBtn.addEventListener("click", confirmQuickfire);
+      startBtn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        startBtn.click();
+      });
+    }
 
     const cancelBtn = quickfireModal.querySelector('[data-action="qf-cancel"]');
-    if (cancelBtn) cancelBtn.addEventListener("click", backFromQuickfire);
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", backFromQuickfire);
+      cancelBtn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        cancelBtn.click();
+      });
+    }
   }
 
   const quickfireInput = document.getElementById("qfTarget");

@@ -386,8 +386,22 @@ export function buildGrid(rows, cols, onColumnClick) {
     const col = Number(target.dataset.col);
     if (!Number.isNaN(col)) onColumnClick(col);
   };
+
+  // Add touch support
+  const touchHandler = (e) => {
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cell = target?.closest(".cell");
+    if (cell && gameGrid.contains(cell)) {
+      const col = Number(cell.dataset.col);
+      if (!Number.isNaN(col)) onColumnClick(col);
+    }
+  };
+
   gameGrid.addEventListener("click", handler);
+  gameGrid.addEventListener("touchstart", touchHandler);
   gameGrid._delegatedHandler = handler;
+  gameGrid._touchHandler = touchHandler;
 
   ensureBoxesSvg();
 }

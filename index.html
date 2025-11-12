@@ -182,6 +182,30 @@
     </main>
 
     <script type="module" src="./js/script.js?v=14"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const gameGrid = document.getElementById("gameGrid");
+
+        // Add touch controls for mobile
+        if (gameGrid) {
+          gameGrid.addEventListener("touchstart", (e) => {
+            const target = e.target.closest(".cell");
+            if (target) {
+              const col = Number(target.dataset.col);
+              if (!Number.isNaN(col)) window.applyRemoteMove(col);
+            }
+          });
+        }
+
+        // Wire up modal buttons
+        document.querySelectorAll("[data-action]").forEach((btn) => {
+          const action = btn.getAttribute("data-action");
+          if (action && typeof window[action] === "function") {
+            btn.addEventListener("click", () => window[action]());
+          }
+        });
+      });
+    </script>
   </body>
 </html>
 
